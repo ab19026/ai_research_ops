@@ -450,10 +450,6 @@ eng-gcx-cation.corp.ebay.com
 
 
 
-GITHUBBOT-SWU
-
-githubbot-swu
-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
 
 
 
@@ -467,7 +463,6 @@ https://cloud.tencent.com/act/pro/double12-2025?fromSource=gwzcw.10342314.103423
 git config --global http.sslVerify false
 
 
-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
 
 
 python 67108864.py MODE_SHOW 1 1,445 latest 15 0.03 qxc
