@@ -1,0 +1,810 @@
+
+
+3 4 5 11 21 31 35 50 53 56 72 76 88 91 110 112 122 126 146 186 223 239 387 395 415 416 615 658 968 977 1284 1293 2602 汉诺塔
+
+
+git fetch;git pull;git add *;git commit -am "ut";git push
+
+
+https://cloud.tencent.com/act/pro/warmup-202606?from=30000
+
+
+①、②、③、④、⑤、⑥、⑦、⑧、⑨、⑩、⑪、⑫、⑬、⑭、⑮、⑯、⑰、⑱、⑲、⑳
+
+
+
+pip3 --trusted-host mirrors.aliyun.com install -qU ragas langchain-openai -i https://mirrors.aliyun.com/pypi/simple/
+
+
+https://www.python.org/ftp/python/3.9.18/Python-3.9.18.tgz
+
+
+                                         
+
+pip --trusted-host pypi.python.org --trusted-host mirrors.aliyun.com install PyWavelets -i https://mirrors.aliyun.com/pypi/simple/
+pip --trusted-host pypi.python.org --trusted-host mirrors.aliyun.com install PyLMD -i https://mirrors.aliyun.com/simple/
+pip --trusted-host pypi.python.org --trusted-host mirrors.aliyun.com install EMD-signal -i https://mirrors.aliyun.com/simple/
+pip --trusted-host pypi.python.org --trusted-host mirrors.aliyun.com install vmdpy -i https://mirrors.aliyun.com/simple/
+pip --trusted-host pypi.python.org --trusted-host mirrors.aliyun.com install PyWavelets -i https://mirrors.aliyun.com/simple/
+
+
+
+
+pip3 --trusted-host mirrors.aliyun.com install darts -i https://mirrors.aliyun.com/pypi/simple/
+pip3 --trusted-host mirrors.aliyun.com install EMD-signal==1.6.0 -i https://mirrors.aliyun.com/pypi/simple/
+pip3 --trusted-host mirrors.aliyun.com install imbalanced-learn==0.12.4 -i https://mirrors.aliyun.com/pypi/simple/
+pip3 --trusted-host mirrors.aliyun.com install matplotlib==3.9.4 -i https://mirrors.aliyun.com/pypi/simple/
+pip3 --trusted-host mirrors.aliyun.com install numpy==1.26.4 -i https://mirrors.aliyun.com/pypi/simple/
+pip3 --trusted-host mirrors.aliyun.com install pandas==2.2.3 -i https://mirrors.aliyun.com/pypi/simple/
+pip3 --trusted-host mirrors.aliyun.com install pydmd==1.0.0 -i https://mirrors.aliyun.com/pypi/simple/
+pip3 --trusted-host mirrors.aliyun.com install pykalman==0.9.7 -i https://mirrors.aliyun.com/pypi/simple/
+pip3 --trusted-host mirrors.aliyun.com install PyLMD==1.0.4 -i https://mirrors.aliyun.com/pypi/simple/
+pip3 --trusted-host mirrors.aliyun.com install PyWavelets==1.6.0 -i https://mirrors.aliyun.com/pypi/simple/
+pip3 --trusted-host mirrors.aliyun.com install scikit-learn==1.6.1 -i https://mirrors.aliyun.com/pypi/simple/
+pip3 --trusted-host mirrors.aliyun.com install scipy==1.13.1 -i https://mirrors.aliyun.com/pypi/simple/
+pip3 --trusted-host mirrors.aliyun.com install statsmodels==0.14.4 -i https://mirrors.aliyun.com/pypi/simple/
+pip3 --trusted-host mirrors.aliyun.com install tensorflow==2.16.1 -i https://mirrors.aliyun.com/pypi/simple/
+pip3 --trusted-host mirrors.aliyun.com install vmdpy==0.2 -i https://mirrors.aliyun.com/pypi/simple/
+pip3 --trusted-host mirrors.aliyun.com install keras==3.3.3 -i https://mirrors.aliyun.com/pypi/simple/
+pip3 --trusted-host mirrors.aliyun.com install ml-dtypes -i https://mirrors.aliyun.com/pypi/simple/
+
+
+
+
+
+pip --trusted-host mirrors.aliyun.com install darts -i https://mirrors.aliyun.com/pypi/simple/
+pip --trusted-host mirrors.aliyun.com install EMD-signal==1.6.0 -i https://mirrors.aliyun.com/pypi/simple/
+pip --trusted-host mirrors.aliyun.com install imbalanced-learn==0.12.4 -i https://mirrors.aliyun.com/pypi/simple/
+pip --trusted-host mirrors.aliyun.com install matplotlib==3.9.4 -i https://mirrors.aliyun.com/pypi/simple/
+pip --trusted-host mirrors.aliyun.com install numpy==1.26.4 -i https://mirrors.aliyun.com/pypi/simple/
+pip --trusted-host mirrors.aliyun.com install pandas==2.2.3 -i https://mirrors.aliyun.com/pypi/simple/
+pip --trusted-host mirrors.aliyun.com install pydmd==1.0.0 -i https://mirrors.aliyun.com/pypi/simple/
+pip --trusted-host mirrors.aliyun.com install pykalman==0.9.7 -i https://mirrors.aliyun.com/pypi/simple/
+pip --trusted-host mirrors.aliyun.com install PyLMD==1.0.4 -i https://mirrors.aliyun.com/pypi/simple/
+pip --trusted-host mirrors.aliyun.com install PyWavelets==1.6.0 -i https://mirrors.aliyun.com/pypi/simple/
+pip --trusted-host mirrors.aliyun.com install scikit-learn==1.6.1 -i https://mirrors.aliyun.com/pypi/simple/
+pip --trusted-host mirrors.aliyun.com install scipy==1.13.1 -i https://mirrors.aliyun.com/pypi/simple/
+pip --trusted-host mirrors.aliyun.com install statsmodels==0.14.4 -i https://mirrors.aliyun.com/pypi/simple/
+pip --trusted-host mirrors.aliyun.com install tensorflow==2.16.1 -i https://mirrors.aliyun.com/pypi/simple/
+pip --trusted-host mirrors.aliyun.com install vmdpy==0.2 -i https://mirrors.aliyun.com/pypi/simple/
+pip --trusted-host mirrors.aliyun.com install keras==3.3.3 -i https://mirrors.aliyun.com/pypi/simple/
+pip --trusted-host mirrors.aliyun.com install ml-dtypes -i https://mirrors.aliyun.com/pypi/simple/
+pip --trusted-host mirrors.aliyun.com install colorama -i https://mirrors.aliyun.com/pypi/simple/
+
+
+
+python -m pip install -i https://mirrors.aliyun.com/pypi/simple/ --upgrade pip
+
+
+mvn -DskipTests=true clean package job-uploader:upload -Dusername=f6582fac3bcd42fb91b02495c3863333 -Dpassword=eCD9PfFC6JHAMfoKU2pstEYMwGNRBlA2mpS6mGHVe2i7Dgtlqg6g7LtesO46TUGg -Dnamespace=risknrt
+
+
+
+f6582fac3bcd42fb91b02495c3863333:eCD9PfFC6JHAMfoKU2pstEYMwGNRBlA2mpS6mGHVe2i7Dgtlqg6g7LtesO46TUGg
+
+
+
+
+mvn -DskipTests=true clean package job-uploader:upload -Dusername=<C3 API Key>  -Dpassword=<C3 API Secret>  -Dnamespace=<namespace> [-DjobJarName=<Customized job jar name>] [-DjobJarTag=<Customized job jar tag>]
+
+
+
+
+
+Package                      Version
+---------------------------- ------------
+absl-py                      2.1.0
+adagio                       0.2.4
+aiohttp                      3.9.5
+aiosignal                    1.3.1
+appdirs                      1.4.4
+array-record                 0.4.1
+astunparse                   1.6.3
+async-timeout                4.0.3
+attrs                        23.2.0
+blinker                      1.8.2
+cachetools                   5.3.2
+certifi                      2024.2.2
+charset-normalizer           3.3.2
+click                        8.1.7
+cloudpickle                  3.0.0
+contourpy                    1.2.1
+coreforecast                 0.0.10
+cycler                       0.12.1
+Cython                       3.0.10
+dart                         1.0
+darts                        0.30.0
+dill                         0.3.8
+dm-tree                      0.1.8
+EMD-signal                   1.6.0
+etils                        1.5.2
+eulxml                       1.1.3
+filelock                     3.15.4
+Flask                        3.0.3
+Flask-SQLAlchemy             3.1.1
+flatbuffers                  24.3.25
+fonttools                    4.48.1
+frozenlist                   1.4.1
+fs                           2.4.16
+fsspec                       2024.3.1
+fugue                        0.9.1
+gast                         0.4.0
+google-auth                  2.27.0
+google-auth-oauthlib         0.4.6
+google-pasta                 0.2.0
+googleapis-common-protos     1.63.0
+greenlet                     3.0.3
+grpcio                       1.64.1
+h5py                         3.11.0
+holidays                     0.52
+idna                         3.6
+imbalanced-learn             0.12.4
+importlib-metadata           7.0.1
+importlib-resources          6.1.1
+itsdangerous                 2.2.0
+Jinja2                       3.1.4
+joblib                       1.3.2
+keras                        3.3.3
+kiwisolver                   1.4.5
+libclang                     16.0.6
+lightning-utilities          0.11.3.post0
+llvmlite                     0.43.0
+lxml                         5.1.0
+Markdown                     3.5.2
+markdown-it-py               3.0.0
+MarkupSafe                   2.1.5
+matplotlib                   3.9.0
+mdurl                        0.1.2
+ml-dtypes                    0.3.2
+mpmath                       1.3.0
+multidict                    6.0.5
+multiprocess                 0.70.16
+namex                        0.0.8
+networkx                     3.2.1
+nfoursid                     1.0.1
+numba                        0.60.0
+numpy                        1.26.4
+oauthlib                     3.2.2
+opt-einsum                   3.3.0
+optree                       0.11.0
+packaging                    23.2
+pandas                       2.2.2
+pathos                       0.3.2
+patsy                        0.5.6
+pillow                       10.2.0
+pip                          24.1
+pip-autoremove               0.10.0
+ply                          3.11
+pmdarima                     2.0.4
+pox                          0.3.4
+ppft                         1.7.6.8
+promise                      2.3
+protobuf                     4.25.3
+psutil                       5.9.8
+pyarrow                      16.1.0
+pyasn1                       0.5.1
+pyasn1-modules               0.3.0
+pydmd                        1.0.0
+Pygments                     2.18.0
+pykalman                     0.9.7
+PyLMD                        1.0.4
+pyod                         2.0.1
+pyparsing                    3.1.1
+python-dateutil              2.8.2
+pytorch-lightning            2.3.1
+pytz                         2024.1
+PyWavelets                   1.6.0
+PyYAML                       6.0.1
+requests                     2.31.0
+requests-oauthlib            1.3.1
+rich                         13.7.1
+rsa                          4.9
+scikit-learn                 1.5.0
+scipy                        1.13.1
+setuptools                   68.2.2
+shap                         0.46.0
+six                          1.15.0
+slicer                       0.0.8
+SQLAlchemy                   2.0.31
+statsforecast                1.7.5
+statsmodels                  0.14.2
+sympy                        1.12.1
+tbats                        1.1.3
+tensorboard                  2.16.2
+tensorboard-data-server      0.7.2
+tensorboardX                 2.6.2.2
+tensorflow                   2.16.1
+tensorflow-io-gcs-filesystem 0.37.0
+termcolor                    1.1.0
+threadpoolctl                3.2.0
+toml                         0.10.2
+torch                        2.2.2
+torchmetrics                 1.4.0.post0
+tqdm                         4.66.2
+triad                        0.9.8
+typing_extensions            4.12.1
+tzdata                       2023.4
+urllib3                      2.2.0
+utilsforecast                0.1.12
+vmdpy                        0.2
+Werkzeug                     3.0.1
+wheel                        0.41.2
+whisper                      1.1.10
+wrapt                        1.12.1
+xarray                       2024.6.0
+xgboost                      2.1.0
+yarl                         1.9.4
+zipp                         3.17.0
+
+
+
+pip uninstall tensorflow --yes
+pip uninstall tensorboard --yes
+pip uninstall keras --yes
+pip uninstall tensorboard --yes
+pip uninstall tensorboard-data-server --yes
+pip uninstall tensorflow-io-gcs-filesystem --yes
+pip uninstall tensorflow --yes
+pip uninstall tensorboard-plugin-wit --yes
+pip uninstall tensorflow-estimator--yes
+pip uninstall tensorflow-gpu --yes
+pip uninstall Keras-Preprocessing --yes
+pip uninstall tensorflow-estimator --yes
+pip uninstall ml-dtypes --yes
+
+dill
+huggingface_hub
+
+pip install darts
+pip install EMD-signal==1.6.0
+pip install imbalanced-learn==0.12.4
+pip install matplotlib==3.9.4
+pip install numpy==1.26.4
+pip install pandas==2.2.3
+pip install pydmd==1.0.0
+pip install pykalman==0.9.7
+pip install PyLMD==1.0.4
+pip install PyWavelets==1.6.0
+pip install scikit-learn==1.6.1
+pip install scipy==1.13.1
+pip install statsmodels==0.14.4
+pip install tensorflow==2.16.1
+pip install vmdpy==0.2
+pip install keras==3.3.3
+pip install ml-dtypes
+pip install colorama
+
+
+
+
+
+python -m pip install darts
+python -m pip install EMD-signal==1.6.0
+python -m pip install imbalanced-learn==0.12.4
+python -m pip install matplotlib==3.9.4
+python -m pip install numpy==1.26.4
+python -m pip install pandas==2.2.3
+python -m pip install pydmd==1.0.0
+python -m pip install pykalman==0.9.7
+python -m pip install PyLMD==1.0.4
+python -m pip install PyWavelets==1.6.0
+python -m pip install scikit-learn==1.6.1
+python -m pip install scipy==1.13.1
+python -m pip install statsmodels==0.14.4
+python -m pip install tensorflow==2.16.1
+python -m pip install vmdpy==0.2
+python -m pip install keras==3.3.3
+python -m pip install ml-dtypes==0.3.2
+
+
+
+
+
+python3.9 -m pip install darts
+python3.9 -m pip install EMD-signal==1.6.0
+python3.9 -m pip install imbalanced-learn==0.12.4
+python3.9 -m pip install matplotlib==3.9.4
+python3.9 -m pip install numpy==1.26.4
+python3.9 -m pip install pandas==2.2.3
+python3.9 -m pip install pydmd==1.0.0
+python3.9 -m pip install pykalman==0.9.7
+python3.9 -m pip install PyLMD==1.0.4
+python3.9 -m pip install PyWavelets==1.6.0
+python3.9 -m pip install scikit-learn==1.6.1
+python3.9 -m pip install scipy==1.13.1
+python3.9 -m pip install statsmodels==0.14.4
+python3.9 -m pip install tensorflow==2.16.1
+python3.9 -m pip install vmdpy==0.2
+python3.9 -m pip install keras==3.3.3
+python3.9 -m pip install ml-dtypes
+python3.9 -m pip install colorama
+
+
+
+
+cp /root/miniforge3/lib/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/
+
+rm /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+
+ln -s /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.29 /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+
+
+find / -name "libstdc++.so.6*"
+
+strings /usr/lib/x86_64-linux-gnu/libstdc++.so.6 | grep GLIBCXX
+
+strings /etc/.hai/miniforge3/lib/libstdc++.so.6.0.32 | grep GLIBCXX
+
+strings /root/miniforge3/lib/libstdc++.so.6 | grep GLIBCXX
+
+
+
+apt update
+apt upgrade
+apt install libstdc++6=GLIBCXX_3.4.30
+
+
+
+
+
+apt-get update
+
+sudo apt-get install -y software-properties-common
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt-get update
+
+
+
+sudo apt-get install -y python3.9 python3-distutils python3-pip
+
+
+python3.9 -m pip list
+
+python3.9 -m pip install --upgrade pip
+
+
+python -m pip install --upgrade pip
+
+
+
+pip uninstall nvidia-cublas-cu12
+pip uninstall nvidia-cuda-cupti-cu12
+pip uninstall nvidia-cuda-nvrtc-cu12
+pip uninstall nvidia-cuda-runtime-cu12
+pip uninstall nvidia-cudnn-cu12
+pip uninstall nvidia-cufft-cu12
+pip uninstall nvidia-cufile-cu12
+pip uninstall nvidia-curand-cu12
+pip uninstall nvidia-cusolver-cu12
+pip uninstall nvidia-cusparse-cu12
+pip uninstall nvidia-cusparselt-cu12
+pip uninstall nvidia-nccl-cu12
+pip uninstall nvidia-nvjitlink-cu12
+pip uninstall nvidia-nvtx-cu12
+
+
+
+
+
+pip install nvidia-cublas-cu12==12.4.5.8
+pip install nvidia-cuda-cupti-cu12==12.4.127
+pip install nvidia-cuda-nvrtc-cu12==12.4.127
+pip install nvidia-cuda-runtime-cu12==12.4.127
+pip install nvidia-cudnn-cu12==9.1.0.70
+pip install nvidia-cufft-cu12==11.2.1.3
+pip install nvidia-curand-cu12==10.3.5.147
+pip install nvidia-cusolver-cu12==11.6.1.9
+pip install nvidia-cusparse-cu12==12.3.1.170
+pip install nvidia-nccl-cu12==2.21.5
+pip install nvidia-nvjitlink-cu12==12.4.127
+pip install nvidia-nvtx-cu12==12.4.127
+
+
+import tensorflow as tf
+tf.config.experimental.set_visible_devices([], 'GPU')
+
+
+
+
+
+
+
+chengrli
+shucheng
+ydrozd
+yuatao
+mjayaraman
+vdaggumall
+arramesh
+sadebnath
+akasturia
+jiaxizhang
+vimankar
+varjain
+zhecwei
+wzhang13
+rongtchen
+
+
+chengrli@ebay.com
+shucheng@ebay.com
+ydrozd@ebay.com
+yuatao@ebay.com
+mjayaraman@ebay.com
+vdaggumall@ebay.com
+arramesh@ebay.com
+sadebnath@ebay.com
+akasturia@ebay.com
+jiaxizhang@ebay.com
+vimankar@ebay.com
+varjain@ebay.com
+zhecwei@ebay.com
+wzhang13@ebay.com
+rongtchen@ebay.com
+
+
+eng-gcx-cation.corp.ebay.com
+
+
+
+
+
+
+GITHUBBOT-SWU
+
+githubbot-swu
+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
+
+
+
+
+tencen
+
+
+https://cloud.tencent.com/act/pro/double12-2025?fromSource=gwzcw.10342314.10342314.10342314&utm_medium=cpc&utm_id=gwzcw.10342314.10342314.10342314#MS
+
+
+git config --global http.sslVerify false
+
+
+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
+
+
+python 67108864.py MODE_SHOW 1 1,445 latest 15 0.03 qxc
+
+
+
+
+https://github-cli.corp.ebay.com/zhiljiang/storevarmgmtsvc.git
+https://github-cli.corp.ebay.com/zhiljiang/datahub-event.git
+
+
+
+
+
+
+1.自我介绍
+我从事了5年以上的后端设计和开发工作,既有从0到1构建项目的经验,也有重构和优化复杂系统的经验,我之前的业务经验主要集中在电商风控领域,虽然和该岗位的业务相关性较弱,但是我的学习能力比较强,并且善于将工程技术融入到不同业务场景去推动业务发展,比如我曾在跨业务背景下主导重构过一个qps在3000左右的电商风控服务,重构后服务的延迟和吞吐量都有30%以上的提升,从而间接提高了业务的可靠性,而且在平时工作时我也特别关注项目的开发质量以及项目上线后的运行质量,并且注重把一些关键流程和解决方案整理成细节文档方便后续追踪,我觉得我的这些经历还是能够让我应对该岗位的一些挑战的
+
+
+I’ve been working as a backend developer for over 5 years. My experience covers everything from building projects from scratch to optimizing complex legacy systems.
+Although my background is mainly in e-commerce risk control, I’m a quick learner and good at applying technical skills to new business scenarios. A good example is when I led a major refactoring project for a risk service handling about 3,000 QPS. After the optimization, we saw a 30% boost in performance and throughput, which really helped the business stability.
+I also care a lot about development quality and documentation to ensure long-term maintainability. I believe these experiences make me a strong candidate for this position.
+
+
+
+
+
+
+背景:
+我所在的风控部门有多个团队,我所属团队主要负责维护一个风控数据处理平台,我们的主要目标是给它接入更多的业务场景数据来提高这个平台在部门内的普及率,我们的兄弟团队负责维护一个数据驱动的电商风控服务,随着业务体量的变大,这个服务的维护成本和可靠性都在变差,靠简单的增量修复已经无法解决问题,所以如果能把这个服务彻底重构并接入到我们团队内部的数据处理平台上的话,既能给我们的平台增加新的业务场景,也能借重构解决旧服务的一系列问题
+
+The risk control department I work in consists of multiple teams. The team I belong to is primarily responsible for maintaining a risk control data processing platform. Our main objective is to integrate more business scenario data into this platform in order to increase its adoption rate within the department.
+Our sibling team is responsible for maintaining a legacy e-commerce risk control service. As the business volume has grown, the maintenance cost and reliability of this service have been deteriorating. Simple incremental fixes are no longer sufficient to resolve the underlying issues.
+Therefore, if we could completely refactor this service and integrate it into our internal data processing platform, it would serve a dual purpose: it would add new business scenarios to our platform, and the refactoring would address the series of problems of the legacy service.
+
+
+2.最成功的项目
+a.在跨团队背景下重构了一个核心电商风控服务,提升了业务可靠性和自身业务平台的普及率,积累了跨团队协作的经验
+b.通过和算法团队合作实现落地了一项适用于当前广告业务的机器学习算法,显著提升了广告业务的投放准确率
+
+Refactored a core e-commerce risk control service in a cross-team context, enhancing both business reliability and the adoption rate of our internal platform while gaining valuable experience in cross-team collaboration.
+
+Collaborated with the algorithm team to implement a dedicated machine learning tecnical for the advertising business at that time, significantly improving the targeting accuracy of ad delivery.
+
+
+3.担任什么角色
+我在这个项目里担任主架构和协调员的角色
+I served as the lead architect and coordinator on this project.
+
+
+4.最大的挑战
+这个项目最大的挑战包含业务和技术两方面
+
+The biggest challenges of this project fell into two categories: business and technical.
+
+首先在业务方面有两个挑战:
+我们需要在跨团队背景下重构一个会影响核心业务的服务,让双方团队达成高效共识并且分工协作完成这次重构是一大挑战
+因为待重构的服务是对方团队维护的,我们团队并不熟悉它的业务逻辑和技术实现
+
+First, on the business side, there were two main challenges:
+We needed to refactor a service critical to core business operations within a cross-team context. Getting both teams to reach an efficient consensus and coordinate their efforts to complete this refactoring was a major challenge.
+Furthermore, since the service being refactored was maintained by the other team, our team was not familiar with its business logic or technical implementation.
+
+另外在技术方面也有两个挑战:
+重构之后怎么保证在不影响业务的前提下实现旧服务到新服务的平滑迁移
+我们设定了一系列量化指标来判断重构后的效果,比如重构后服务可靠性,延迟,吞吐量,可维护性必须提升多少个百分点,能否达到这些指标也是一大挑战
+
+
+
+In addition, on the technical side, there were also two challenges:
+How to ensure a seamless migration from the old service to the new one without impacting ongoing business operations after the refactoring.
+We established a series of quantitative metrics to evaluate the refactoring. For instance, we set specific percentage improvement targets for post-refactoring service reliability, latency, throughput, and maintainability. Meeting these targets was another significant challenge.
+
+
+
+
+5.怎么解决挑战
+
+和对方团队保持深入讨论和沟通,用现状数据证明这次重构的必要性,在对方的协助下深入了解待重构项目的所有业务和技术细节,制定明确的分工计划、分阶段目标和进度时间表,并且把重构过程出现的关键问题和阶段成果都落地成文档方便追溯
+
+Maintained in-depth discussions and communication with the other team, using current performance data to justify the necessity of the refactoring. With their assistance, gained a thorough understanding of all business and technical details of the target service. Developed a clear division of responsibilities, phased objectives, and a project timeline. Key issues encountered during the refactoring process and milestone achievements were documented for traceability.
+
+通过健全的的监控、数据验证和流量切换机制保证了不影响业务的服务重构
+分析重构前服务问题产生的根本原因,在权衡了实现复杂性和可靠性后,通过数据库和应用层的优化解决了这些问题,具体的优化手段主要有拆分微服务、拆分数据库长事务,水平分表,聚合写请求降低并发流量以及用缓存幂等性代替数据库幂等性等
+
+Ensured a business-impact-free refactoring through robust monitoring, data validation, and traffic-switching mechanisms.
+Analyzed the root causes of issues in the legacy service. After making the tradeoff between complexity and effectiveness, resolved these issues through optimizations at both the database and application layers. Specific optimization techniques included: splitting microservices, breaking up long-running database transactions, horizontal table partitioning, aggregating write requests to reduce concurrent traffic pressure, and replacing database-level idempotency with cache-based idempotency.
+
+
+
+6.学到了什么
+在跨团队协作背景下要对同事有充分的信任,不要想着靠自己解决所有问题,有些难题交给精通相关领域的其他同事去完成才是高效完成合作的正确方式
+
+In the context of cross-team collaboration, it's essential to trust your colleagues fully and not assume that you need to solve every problem on your own. Handing over challenging issues to teammates who specialize in those particular areas is the right way to achieve efficient cooperation.
+
+
+
+
+
+
+1.为什么选择这家公司 & 为什么要选择你
+a.我对于将AI技术结合并落地到具体的业务场景是很有兴趣的,之前也在这方面积累了较多的经验,这些经历和我应聘的岗位还是非常契合的
+a. I am very interested in integrating AI technologies into specific business scenarios and applying them in practice. I have accumulated considerable experience in this area, which aligns well with the position I am applying for.
+
+b.之前和面试官聊下来感觉这个岗位对应的团队是比较务实并且注重可持续的长远发展的,我觉得如果有机会在这样的团队工作能使自己的综合能力得到提升
+b. From my conversation with the interviewer, I feel that the team for this role is pragmatic and focuses on sustainable long-term development. I believe that working in such a team would help me improve my overall capabilities.
+
+c.我的学习能力比较强,之前有过几次业务方向的转变也能快速适应,所以我是很愿意尝试从互联网行业到保险行业到业务转变的
+ I have strong learning abilities and have quickly adapted to several changes in business direction in the past. Therefore, I am very willing to try shifting from the internet industry to the insurance industry.
+
+
+
+4.未来规划
+a.工作内容角度:继续深耕AI领域,我的宗旨是结合公司团队和业务的需求现状去解决具体的问题,从之前和面试官聊天获取的信息来看,我的短期规划是想在AI编程方面主导落地一些有效的解决方案来提升工程开发效率和质量,长期规划则是想探索将AI Agent结合到更多更通用的真实业务场景去赋能业务的可持续发展
+. From a work content perspective: Continue to deepen my work in the AI field. My principle is to solve specific problems based on the current needs of the company, the team, and the business. Based on the information gathered from my conversation with the interviewer, my short‑term plan is to lead the implementation of effective solutions in AI programming to improve engineering development efficiency and quality. My long‑term plan is to explore integrating AI agents into more and broader real‑world business scenarios to empower sustainable business development.
+
+
+b.个人发展角度:我觉得该岗位团队氛围还是比较扁平化的,我希望通过和团队成员的互相推动和学习,来提高自己专业技能方面的硬实力和沟通、协作相关的软实力,让自己成长为某个具体领域的拥有综合能力的技术专家
+b. From a personal development perspective: I feel the team atmosphere for this role is relatively flat. Through mutual motivation and learning with team members, I hope to strengthen both my hard skills (professional expertise) and soft skills (communication, collaboration), and eventually grow into a well‑rounded technical expert in a specific domain.
+
+
+
+5.离职原因
+我所属团队被拆分调整到其他部门了,我和另外几位同事受到了影响从而被动离职
+My original team was disbanded and reassigned to other departments. Several colleagues and I were affected and had to leave involuntarily.
+
+
+6.gap
+a.我之前是做互联网电商风控业务的,出于对未来发展的规划,我先是调研了下目前招聘市场上相关岗位的要求,发现我目前的业务方向未来的发展空间还是比较局限的,所以就想尝试做一些转变,同时也花时间对自己的专业技能和工程能力做了一些提升
+a. Previously, I worked in risk control for internet e‑commerce. Driven by my future career plans, I first researched the requirements for relevant roles in the current job market. I found that my current business direction offers limited room for growth, so I decided to try making a transition. At the same time, I spent time improving my professional skills and engineering capabilities.
+
+
+b.结合招聘市场岗位的调研结果和未来大趋势,我觉得AI相关的技能还是比较重要的,而且我之前工作已经有一定的相关积累了,所以着重在这方面继续做一些知识储备和实践,比如我最近2个月一直在做一个AI Agent的项目,通过具体的实践去加深自己对AI相关领域的理解
+b. Based on the job market research and future trends, I believe AI‑related skills are very important. Since I already had some relevant experience from my previous work, I focused on further knowledge building and practice in this area. For example, over the past two months, I have been working on an AI agent project, deepening my understanding of AI‑related fields through hands‑on practice.
+
+
+
+
+10.管理相关
+a.我没有直接的管理方面经验,我之前作为项目负责人和他人协作的时候也思考过这方面的一些问题:
+a. I do not have direct management experience. However, when I acted as a project lead and collaborated with others, I did think about certain management aspects:
+
+1.我觉得应该让合适的人做合适的事情,这个是我从我的leader身上学到的经验,比如我之前和两个外包人员合作完成一个业务模块,从平时对他们的了解来看
+有一个人特别擅长数据处理方面的工作,另外一个人比较主动开放,善于和不同业务线的同事沟通去交换信息,我当时是这个模块的负责人,所以我就让第一个
+同事负责数据模块的开发,让另一个同事整理和这个模块相关的上下游业务依赖,结果推进的效率就比较高
+I believe in putting the right people in the right positions. I learned this from my leader. For example, when working with two outsourcing colleagues on a business module – based on my observations, one was particularly good at data processing, while the other was proactive and open, good at communicating with colleagues from different business lines to exchange information. As the person in charge of the module, I assigned the first colleague to develop the data components and the second to map out upstream and downstream business dependencies related to the module. As a result, progress was highly efficient.
+
+
+
+2.在做项目的时候必须给各个任务划分明确的负责人和量化的指标,这个指标包括项目的进度时间表、阶段性成果等等,每个负责人必须对自己那块任务的结果和时间负责,当有阶段性成果后应该对相关人员有明确的认可和表扬
+When working on a project, there must be clear ownership and quantifiable metrics. These metrics include project timelines, milestone deliverables, etc. Each owner must be accountable for the results and schedule of their tasks. When milestones are achieved, clear recognition and praise should be given to those involved.
+
+
+3.团队内不管是leader还是普通员工都应该互相学习和帮助,我在之前公司工作的时候,无论是leader还是普通员工每个月都要求在部门内公开分享自己最近的业务和技术方面的成果,这种机制能充分让我们增进互相的了解知道对方在干什么,另外我之前遇到靠自身解决不了的工作难题时候,我的leader会尽最大能力协调团队甚至部门内外的相关同事去一起帮助解决问题
+Within a team, whether leaders or ordinary employees, everyone should learn from and help each other. In my previous company, both leaders and ordinary employees were required to publicly share their recent business and technical achievements within the department every month. This mechanism helped us understand what each person was working on. Additionally, when I encountered difficult problems that I could not solve on my own, my leader did his best to coordinate resources – both within the team and across departments – to help resolve the issues.
+
+
+2.业绩:
+1.重构了一个核心的商家风控服务,重构之后使业务可靠性提高50%,服务延迟降低40%,吞吐量增加35%,将写死的业务逻辑解耦成配置驱动的规则语言,借助大模型+RAG将迁移效率提升20%以上
+2.结合大模型+RAG优化了风控数据平台的监控链路和规则引擎,将处理问题的效率提升了25%以上,并为平台引入了更多业务使用场景
+
+3.经验:
+必须时不时地对外展示自己的技术和业务成果,提高曝光度
+You must regularly showcase your technical and business achievements to increase visibility.
+
+在跨团队协作背景下要对同事有充分的信任,不要想着靠自己解决所有问题,有些难题交给精通相关领域的其他同事去完成才是高效完成合作的正确方式
+In cross‑team collaboration, you need to fully trust your colleagues and not try to solve every problem on your own. Handing certain difficult problems to other colleagues who are experts in those areas is the correct way to achieve efficient collaboration.
+
+
+
+11.反问:
+贵公司的培养体系:
+a.社招的背景下,为了能快速融入团队,公司会有一定的培训机制吗
+b.员工晋升/绩效考核会看哪些方面,晋升或者绩效考核的频次是怎样的
+c.贵公司偏技术领域的研发人员占总员工的比重是怎样的
+
+
+
+
+7.优点
+我最大的优势是具备快速学习适应能力和善于用合适的工具去定位和解决问题
+My greatest strengths are my rapid learning and adaptability, as well as my proficiency in using the right tools to diagnose and resolve problems.
+
+
+8.缺点
+我主要的缺点有两类:
+第一是不善于对外曝光自己,对外展现自己的影响力
+第二是在交流沟通方面,不善于总结一件事情的关键点,有时比较啰嗦
+
+My main weaknesses fall into two categories:
+First, I am not good at promoting myself externally or demonstrating my influence to others.
+Second, when it comes to communication, I sometimes struggle to summarize the key points of a matter and can be a bit long-winded.
+
+
+
+9.最大的失败
+最大的失败是因为自己的业务局限性和不善于对外曝光的性格,从而失去了让自己的技术方案落地到更多业务场景从而发扬光大的机会
+
+My biggest failure stems from my own business limitations and my reluctance to promote myself externally, which caused me to miss the opportunity to deploy my technical solutions across a wider range of business scenarios and allow them to achieve greater impact.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8年以上后端开发经验,技术基础扎实,文档能力和团队协作能力优秀
+
+
+
+
+
+
+
+
+硕士毕业证编号:102691201702002628
+硕士学位证编号:1026932017001848
+
+本科毕业证编号:102801201405003529
+本科学位证编号:1028042014001708
+
+
+
+
+
+
+职责:
+负责部门内风控数据平台的优化和系统设计工作
+维护和保证数据平台对外交付的数据质量
+
+绩效:前40%
+
+
+
+职责:
+负责广告平台的底层数据链路搭建和优化
+负责数据中台的通用数据基础能力建设
+
+绩效:前40%
+
+
+
+
+20
+
+业务场景和规模:
+
+业绩:
+1.重构了一个核心的商家风控服务,重构之后使业务可靠性提高50%,服务延迟降低40%,吞吐量增加35%,将写死的业务逻辑解耦成配置驱动的规则语言,借助大模型+RAG将迁移效率提升20%以上
+2.结合大模型+RAG优化了风控数据平台的监控链路和规则引擎,将处理问题的效率提升了25%以上,并为平台引入了更多业务使用场景
+
+经验:
+必须时不时地对外展示自己的技术和业务成果,提高曝光度
+
+
+业务场景和规模:
+
+业绩:
+1.从0到1构建了广告平台数据管理系统(DMP), 并借助该系统将广告投放准确率提升了15%以上
+2.从工程侧优化了模型线上推理的使用规模和效能
+
+经验:
+从0到1完整构建了一个对业务产生积极影响的项目
+
+
+1.因为疫情原因休息了一段时间
+2.通过对未来发展和自身能力定位,决定花时间进行技术栈转型以适应更广的市场需求和业务场景,为此准备了一些时间
+
+
+
+主观原因:
+1.系统考察自身技术能力和业务背景和当前市场相关岗位的差距,进行查漏补缺
+2.出于对未来职业发展和稳定性的考虑,花时间积累AI相关技术储备
+
+客观原因:
+经过几次简历筛选不通过和面试不通过的后续咨询,确定自己的年龄(35岁+)是一个不被市场认可的重要因素
+
+
+公司描述
+
+行业
+
+业务
+
+
+
+
+
+假设你是一位极致追求细节甚至钻牛角尖的面试官,针对下面的项目经历:
+
+
+通过跨团队协作,主导将用于商家风控的单体服务重构为基于SpringCloud的微服务,通过健全机制(全链路日志监控+分布式事务)保证了重构质量和业务稳定,通过分表+冷热、读写分离和预聚合写请求解决了事务竞争的性能问题, 通过并发预热(多线程+CyclicBarrier)和熔断增强服务可靠性, 重构之后业务可靠性提高50%, 服务延迟降低40%, 吞吐量增加35%, 将写死的业务逻辑解耦成配置驱动的规则语言, 借助大模型+RAG将迁移效率提升20%以上
+关键词: 分布式、多线程、事务和索引、SpringCloud、高可用、跨团队协作
+
+
+请提出10个业务方面的问题,并说明如果我作为面试者应该怎样一一回答
+
+
+
+
+
+
+4 6 5 8 9 7    4,6  5,7,8  9      4/6
+
+0 8 2 3 7 1    2,8 0,7            0
+
+9 3 6 7 1 5 0                     9
+
+6 1 0 5 4 3                       0
+
+2 6 3 9 4 5                       2/3
+
+4 5 6 1 0 2                       0
+
+7 4 9 6 3 8                       10
+
+
+
+
+
+
+
+
+
+6 7
+6
+8 (2)
+1
+8 (5)
+4 5
+11

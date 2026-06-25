@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NOW_DATE</title>
+    <style>
+        table { border-collapse: collapse; width: 60%; margin: 2px auto; }
+        th, td { border: 1px solid #ccc; padding: 2px; text-align: left; }
+        .pagination { text-align: left; margin: 2px; }
+        .pagination button { margin: 0 5px; padding: 2px 2px; }
+        .canvas_out { width:500px; height:300px; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>(<font color="red">?</font> 0.0?,0.0?,0.0?) (<font color="red">?</font> 0.0?,0.0?,0.0?) (<font color="red">?</font> 0.0?,0.0?,0.0?) (<font color="red">?</font> 0.0?,0.0?,0.0?) (<font color="red">?</font> 0.0?,0.0?,0.0?) (<font color="red">?</font> 0.0?,0.0?,0.0?) (<font color="red">?</font> 0.0?,0.0?,0.0?)</h1>
+    <table id="dataTable" style="width:1200px">
+        <tbody></tbody>
+    </table>
+    <br>
+    <table id="candTable" style="width:1200px">
+        <tbody></tbody>
+    </table>
+    <br>
+    <div class="pagination" id="pagination"></div>
+    <script>
+        let renderOrigin = {0:[],1:[],2:[],3:[],4:[],5:[],6:[]};
+        let renderPredLeft = {0:[],1:[],2:[],3:[],4:[],5:[],6:[]};
+        let renderPredRight = {0:[],1:[],2:[],3:[],4:[],5:[],6:[]};
+        let predCand = {0:[],1:[],2:[],3:[],4:[],5:[],6:[]};
+        const dataCand = {0:[],1:[],2:[],3:[],4:[],5:[],6:[]};
+        const data = {
+            0 : ONE_HTML,
+            1 : TWO_HTML,
+            2 : THREE_HTML
+        }
+        function renderTable(current) {
+            const tbody = document.querySelector('#dataTable tbody');
+            tbody.innerHTML = '';
+            for ( let r = 0; r < data[current - 1].length; r++ ) {
+                const tr = document.createElement('tr');
+                for (let c = 0; c < data[current - 1][0].length; c++) {
+                    const td = document.createElement('td');
+                    td.innerHTML = data[current - 1][r][c];
+                    if ( c == 2 ) {
+                        td.innerHTML += "<br><div class='canvas_out'><canvas id='canvas_" + (current-1) + "_" + r + "'></canvas></div>";
+                    }
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+                const validateShowCount = 14;
+                const labels = renderOrigin[current-1][r].slice(-validateShowCount).map((_, i) => i + 1);
+                const ctx = document.getElementById('canvas_' + (current-1) + '_' + r).getContext('2d');
+                new Chart(ctx, {
+                  type: 'line',
+                  data: {
+                    labels: labels,
+                    datasets: [{
+                      label: 'Origin',
+                      data: renderOrigin[current-1][r].slice(-validateShowCount),
+                      fill: false,
+                      borderColor: 'blue',
+                      backgroundColor: 'blue',
+                      pointRadius: 5,
+                      pointBackgroundColor: 'red'
+                    },{
+                      label: 'PredLeft',
+                      data: renderPredLeft[current-1][r].slice(-validateShowCount),
+                      fill: false,
+                      borderColor: 'red',
+                      backgroundColor: 'red',
+                      pointRadius: 5,
+                      pointBackgroundColor: 'red'
+                    },
+                    {
+                      label: 'PredRight',
+                      data: renderPredRight[current-1][r].slice(-validateShowCount),
+                      fill: false,
+                      borderColor: 'green',
+                      backgroundColor: 'green',
+                      pointRadius: 5,
+                      pointBackgroundColor: 'red'
+                    }]
+                  },
+                  options: {
+                    scales: {
+                      x: {
+                        title: { display: true, text: 'Index' }
+                      },
+                      y: {
+                        min: Math.min(...renderOrigin[current-1][r].slice(-validateShowCount), ...predCand[current-1][r]),
+                        max: Math.max(...renderOrigin[current-1][r].slice(-validateShowCount), ...predCand[current-1][r]),
+                        title: { display: true, text: 'Value' }
+                      }
+                    }
+                  }
+                });
+            }
+        }
+        function renderCandTable(current) {
+            const tbody = document.querySelector('#candTable tbody');
+            tbody.innerHTML = '';
+            for ( let r = 0; r < dataCand[current - 1].length; r++ ) {
+                const tr = document.createElement('tr');
+                for ( let c = 0; c < dataCand[current - 1][r].length; c++ ) {
+                    const td = document.createElement('td');
+                    td.innerHTML = dataCand[current - 1][r][c];
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            }
+        }
+        function mean(data) {
+            let sum = data.reduce((acc, val) => acc + val, 0);
+            return sum / data.length;
+        }
+
+        function standardDeviation(data, mean) {
+            let sumOfSquares = data.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0);
+            return Math.sqrt(sumOfSquares / data.length);
+        }
+
+        function covariance(x, meanX, y, meanY) {
+            let sum = x.reduce((acc, val, i) => acc + (val - meanX) * (y[i] - meanY), 0);
+            return sum / x.length;
+        }
+
+        function pearson(a, b) {
+            let meanA = mean(a);
+            let meanB = mean(b);
+            let stdDevA = standardDeviation(a, meanA);
+            let stdDevB = standardDeviation(b, meanB);
+            let cov = covariance(a, meanA, b, meanB);
+            let pearsonCorrelation = cov / (stdDevA * stdDevB);
+            return pearsonCorrelation;
+        }
+        
+        function calculateFirstOrderDiff(arr) {
+            let diff = [];
+            for (let i = 1; i < arr.length; i++) {
+                diff.push(Math.abs(arr[i] - arr[i - 1]));
+            }
+            mx = Math.max(...diff);
+            mi = Math.min(...diff);
+            var result = [];
+            for ( var v of diff ) {
+                result.push((v - mi) / (mx - mi));
+            }
+            return result;
+        }
+
+        function sortOriginIndex(originalArray, reverse=false) {
+            originalIndices = [];
+            for (let i = 0; i < originalArray.length; i++) {
+                originalIndices[i] = i;
+            }
+            if ( reverse ) {
+                originalIndices.sort((a, b) => originalArray[b] - originalArray[a]);
+            } else {
+                originalIndices.sort((a, b) => originalArray[a] - originalArray[b]);
+            }
+            console.log(originalIndices);
+        }
+
+        function renderPagination(current) {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            for (let i = 1; i <= 7; i++) {
+                const btn = document.createElement('button');
+                btn.textContent = i;
+                btn.disabled = i === current;
+                btn.style="width:50px;height:50px;font-size:20px";
+                btn.onclick = () => {
+                    renderTable(i);
+                    renderCandTable(i);
+                    renderPagination(i);
+                };
+                pagination.appendChild(btn);
+            }
+            let candTable = document.getElementById('candTable');
+            var candArr = [];
+            var labelArr = [];
+            if (candTable) {
+                var labelNum = 10;
+                const rows = candTable.rows;
+                for ( let label = 0; label < labelNum; label ++ ) {
+                    candArr.push([]);
+                    for (let i = 0; i < rows.length; i++) {
+                        const cells = rows[i].cells;
+                        candArr[label].push(Number(cells[label].textContent));
+                    }
+                }
+                console.log(candArr);
+            }
+            let dataTable = document.getElementById('dataTable');
+            if (dataTable) {
+                const rows = dataTable.rows;
+                for (let i = 0; i < rows.length; i++) {
+                    const cells = rows[i].cells;
+                    labelArr.push(Number(cells[0].textContent));
+                }
+                console.log(labelArr);
+            }
+            let corrArr = [];
+            for ( let cand of candArr ) {
+                corrArr.push(pearson(calculateFirstOrderDiff(cand), calculateFirstOrderDiff(labelArr)));
+            }
+            sortOriginIndex(corrArr, true);
+        }
+
+        let dataLenPos = 0;
+        let predHtmlPos = 1;
+        let validateHtmlPos = 2;
+        for ( let current = 1; current <= 7; current ++ ) {
+            for ( let r = 0; r < data[current-1].length; r ++ ) {
+                var validateLen = data[current - 1][r][validateHtmlPos].split('<br>').length;
+                var validateLast = validateLen - 3;
+                var validateEnd = validateLen - 2;
+                var predEnd = 2;
+                pred = data[current - 1][r][predHtmlPos].split('<br>').filter(x => x != '').map(x => Number(x.split(', ')[predEnd].replaceAll("'", '').replaceAll(']', '').replaceAll('[', '')));
+                validateDiffArr = data[current - 1][r][validateHtmlPos].split('<br>').slice(0,validateEnd).map(x => x.split('----')).map(x => [x[0].replaceAll('[', '').replaceAll(']', '').split(' ').filter(v => v != ''), x[1].replaceAll('[', '').replaceAll(']', '').split(' ').filter(v => v != '')]).map(x => [(Number(x[0][0]) - Number(x[1][0])).toFixed(4), (Number(x[0][1]) - Number(x[1][1])).toFixed(4)]);
+                targetPair = data[current - 1][r][validateHtmlPos].split('<br>')[validateEnd].replaceAll('[', '').replaceAll(']', '').split(' ').filter(x => x != '' && x != ' ').map(Number);
+                predDiffArr = pred.map(x => [(x - targetPair[0]).toFixed(4), (x - targetPair[1]).toFixed(4)])
+                data[current - 1][r][predHtmlPos] = data[current - 1][r][predHtmlPos].split('<br>').map((x,idx) => x + '----' + predDiffArr[idx]).join('<br>');
+                data[current - 1][r][validateHtmlPos] = data[current - 1][r][validateHtmlPos].split('<br>').map((x,idx) => x + '----' + validateDiffArr[idx]).join('<br>');
+                renderOrigin[current - 1].push(data[current - 1][r][validateHtmlPos].split('<br>').slice(0,validateEnd).map(x => x.split('----')).map(x => [x[0].replaceAll('[', '').replaceAll(']', '').split(' ').filter(v => v != ''), x[1].replaceAll('[', '').replaceAll(']', '').split(' ').filter(v => v != '')]).map(x => Number(x[1][0])));
+                renderPredLeft[current - 1].push(data[current - 1][r][validateHtmlPos].split('<br>').slice(0,validateEnd).map(x => x.split('----')).map(x => [x[0].replaceAll('[', '').replaceAll(']', '').split(' ').filter(v => v != ''), x[1].replaceAll('[', '').replaceAll(']', '').split(' ').filter(v => v != '')]).map(x => Number(x[0][0])));
+                renderPredRight[current - 1].push(data[current - 1][r][validateHtmlPos].split('<br>').slice(0,validateEnd).map(x => x.split('----')).map(x => [x[0].replaceAll('[', '').replaceAll(']', '').split(' ').filter(v => v != ''), x[1].replaceAll('[', '').replaceAll(']', '').split(' ').filter(v => v != '')]).map(x => Number(x[0][1])));
+                predCand[current - 1].push(pred);
+                let validateDataArr = data[current - 1][r][validateHtmlPos].split('<br>');
+                let lastCandValue = Number(validateDataArr[validateLast].split('----')[1].replaceAll('[', '').replaceAll(']', '').split(' ').filter(v => v != '')[1]);
+                dataCand[current-1].push(pred.map(x => (x - lastCandValue).toFixed(4)));
+            }
+        }
+        // 初始化第一页
+        renderTable(1);
+        renderCandTable(1);
+        renderPagination(1);
+    </script>
+</body>
+</html>

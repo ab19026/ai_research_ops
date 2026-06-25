@@ -1,0 +1,568 @@
+{
+    "参差不齐接近时小的偏多": {
+        "len(small_near_tmp) >= len(big_tmp) and len(small_near_tmp) >= len(big_near_tmp)": {
+            "GAP": [
+                {
+                    "gap_stat_val": -0.01,
+                    "mid_judge_over": true,
+                    "gap_and_consecutive": {
+                        "pos": "gap_stat[-0.01] - 1",
+                        "left": true
+                    }
+                },
+                {
+                    "gap_stat_val": -0.01,
+                    "mid_judge_over": false,
+                    "gap_and_consecutive": {
+                        "pos": "gap_stat[-0.01] - 1",
+                        "left": true
+                    }
+                }
+            ],
+            "SKIP": [
+                {
+                    "gap_stat_val": -0.01,
+                    "skip_pos": "gap_stat[-0.01]",
+                    "shift": 1,
+                    "skip_val": -0.009266645500000097,
+                    "mid_judge_over": true,
+                    "pos_1_consecutive": false,
+                    "pos_2_consecutive": false,
+                    "opt": "<"
+                }
+            ],
+            "PAIR": [
+                {
+                    "gap_stat_val": -0.0,
+                    "left_val": -0.007634418900000034,
+                    "right_val": -0.0014409124000000105,
+                    "pos": 0,
+                    "left_consecutive": false,
+                    "right_consecutive": false
+                }
+            ]
+        },
+        "len(small_tmp) >= len(big_tmp) and len(small_tmp) >= len(big_near_tmp)": {
+            "PAIR": [
+                {
+                    "gap_stat_val": -0.06,
+                    "pos": -1,
+                    "current_consecutive": false,
+                    "non_current_consecutive": false
+                }
+            ],
+            "GAP": [
+                {
+                    "gap_stat_val": -0.02,
+                    "mid_judge_over": true,
+                    "gap_and_consecutive": {
+                        "pos": "gap_stat[-0.02]",
+                        "left": false
+                    }
+                },
+                {
+                    "gap_stat_val": -0.02,
+                    "mid_judge_over": false,
+                    "gap_and_consecutive": {
+                        "pos": "gap_stat[-0.02]",
+                        "left": false
+                    }
+                }
+            ]
+        },
+        "len(small_near_tmp) - len(big_tmp) >= -1 and len(small_near_tmp) - len(big_near_tmp) >= -1": {
+            "PAIR": [
+                {
+                    "gap_stat_val": -0.0,
+                    "left_val": -0.00824496670000006,
+                    "right_val": -0.002051460200000038,
+                    "pos": 0,
+                    "left_consecutive": false,
+                    "right_consecutive": false
+                }
+            ]
+        }
+    },
+    "大部分小": {
+        "len(small_tmp) >= len(big_tmp) and len(small_tmp) >= len(big_near_tmp)": {
+            "GAP": [
+                {
+                    "gap_stat_val": -0.07,
+                    "mid_judge_over": false,
+                    "gap_and_consecutive": {
+                        "pos": "gap_stat[-0.07]",
+                        "left": false
+                    }
+                },
+                {
+                    "gap_stat_val": -0.02,
+                    "mid_judge_over": true,
+                    "gap_and_consecutive": {
+                        "pos": "gap_stat[-0.02] - 1",
+                        "left": true
+                    }
+                }
+            ]
+        },
+        "len(small_near_tmp) >= len(big_tmp) and len(small_near_tmp) >= len(big_near_tmp)": {
+            "SINGLE": [
+                {
+                    "gap_stat_val": -0.01,
+                    "single_val": -0.014959761999999986,
+                    "single_opt": ">",
+                    "consecutive": false
+                }
+            ]
+        }
+    },
+    "参差不齐小": {
+        "len(small_tmp) >= len(big_tmp) and len(small_tmp) >= len(big_near_tmp)": {
+            "GAP": [
+                {
+                    "gap_stat_val": -0.07,
+                    "mid_judge_over": false,
+                    "gap_and_consecutive": {
+                        "pos": "gap_stat[-0.07]",
+                        "left": false
+                    }
+                },
+                {
+                    "gap_stat_val": -0.02,
+                    "mid_judge_over": true,
+                    "gap_and_consecutive": {
+                        "pos": "gap_stat[-0.02] - 1",
+                        "left": true
+                    }
+                },
+                {
+                    "gap_stat_val": -0.02,
+                    "mid_judge_over": true,
+                    "gap_and_consecutive": {
+                        "pos": "gap_stat[-0.02]",
+                        "left": false
+                    }
+                }
+            ]
+        },
+        "len(small_near_tmp) >= len(big_tmp) and len(small_near_tmp) >= len(big_near_tmp)": {
+            "SKIP": [
+                {
+                    "gap_stat_val": -0.01,
+                    "skip_pos": "gap_stat[-0.01]",
+                    "shift": 1,
+                    "skip_val": -0.007721912599999975,
+                    "mid_judge_over": false,
+                    "pos_1_consecutive": false,
+                    "pos_2_consecutive": false,
+                    "opt": "<"
+                }
+            ],
+            "PAIR": [
+                {
+                    "gap_stat_val": -0.01,
+                    "pos": -1,
+                    "current_consecutive": false,
+                    "non_current_consecutive": false
+                }
+            ]
+        }
+    },
+    "连续接近时小的偏多": {
+        "len(small_near_tmp) >= len(big_tmp) and len(small_near_tmp) >= len(big_near_tmp)": {
+            "END_POINT": [
+                {
+                    "gap_stat_val": -0.01,
+                    "end_point": {
+                        "opt": ">",
+                        "val": -0.0013001057000000702,
+                        "pos": -1
+                    },
+                    "mid_judge_over": false,
+                    "end_point_consecutive": false,
+                    "non_end_point_consecutive": false
+                },
+                {
+                    "gap_stat_val": -0.0,
+                    "end_point": {
+                        "opt": "<",
+                        "val": -0.009363213999999936,
+                        "pos": 0
+                    },
+                    "mid_judge_over": "equal",
+                    "end_point_consecutive": false,
+                    "non_end_point_consecutive": false
+                },
+                {
+                    "gap_stat_val": -0.0,
+                    "end_point": {
+                        "opt": "<",
+                        "val": -0.008386655299999917,
+                        "pos": 0
+                    },
+                    "mid_judge_over": "equal",
+                    "end_point_consecutive": false,
+                    "non_end_point_consecutive": false
+                }
+            ],
+            "SKIP": [
+                {
+                    "gap_stat_val": -0.01,
+                    "skip_pos": "gap_stat[-0.01]",
+                    "shift": 1,
+                    "skip_val": -0.007174257599999995,
+                    "mid_judge_over": false,
+                    "pos_1_consecutive": false,
+                    "pos_2_consecutive": false,
+                    "opt": "<"
+                }
+            ],
+            "GAP": [
+                {
+                    "gap_stat_val": -0.01,
+                    "mid_judge_over": true,
+                    "gap_and_consecutive": {
+                        "pos": "gap_stat[-0.01] - 1",
+                        "left": true
+                    }
+                },
+                {
+                    "gap_stat_val": -0.01,
+                    "mid_judge_over": false,
+                    "gap_and_consecutive": {
+                        "pos": "gap_stat[-0.01]",
+                        "left": false
+                    }
+                },
+                {
+                    "gap_stat_val": -0.01,
+                    "mid_judge_over": false,
+                    "gap_and_consecutive": {
+                        "pos": "gap_stat[-0.01] - 1",
+                        "left": true
+                    }
+                }
+            ],
+            "BETWEEN": [
+                {
+                    "gap_stat_val": -0.0,
+                    "mid_judge_over": "equal",
+                    "left_consecutive": false,
+                    "right_consecutive": false,
+                    "this_consecutive": false,
+                    "left_val": -0.008014965099999976,
+                    "right_val": -0.0006619037999999909
+                }
+            ]
+        },
+        "len(small_tmp) >= len(big_tmp) and len(small_tmp) >= len(big_near_tmp)": {
+            "PAIR": [
+                {
+                    "gap_stat_val": -0.06,
+                    "pos": -1,
+                    "current_consecutive": false,
+                    "non_current_consecutive": false
+                }
+            ],
+            "GAP": [
+                {
+                    "gap_stat_val": -0.02,
+                    "mid_judge_over": true,
+                    "gap_and_consecutive": {
+                        "pos": "gap_stat[-0.02]",
+                        "left": false
+                    }
+                }
+            ]
+        },
+        "len(big_near_tmp) >= len(small_tmp)": {
+            "PAIR": [
+                {
+                    "gap_stat_val": 0.0,
+                    "left_val": 0.0055596797000000584,
+                    "right_val": 0.008434282800000008,
+                    "pos": 0,
+                    "left_consecutive": false,
+                    "right_consecutive": false
+                }
+            ]
+        }
+    },
+    "连续接近时大小一样": {
+        "len(small_near_tmp) >= len(big_tmp) and len(small_near_tmp) >= len(big_near_tmp)": {
+            "BETWEEN": [
+                {
+                    "gap_stat_val": -0.0,
+                    "mid_judge_over": "equal",
+                    "left_consecutive": false,
+                    "right_consecutive": false,
+                    "this_consecutive": false,
+                    "left_val": -0.009557315500000035,
+                    "right_val": -0.0009287439999999978
+                }
+            ]
+        },
+        "len(big_near_tmp) >= len(small_tmp) and len(big_near_tmp) >= len(small_near_tmp)": {
+            "END_POINT": [
+                {
+                    "gap_stat_val": 0.01,
+                    "end_point": {
+                        "opt": "<",
+                        "val": 0.0017625386000001018,
+                        "pos": 0
+                    },
+                    "mid_judge_over": false,
+                    "end_point_consecutive": false,
+                    "non_end_point_consecutive": false
+                }
+            ],
+            "GAP": [
+                {
+                    "gap_stat_val": 0.01,
+                    "mid_judge_over": false,
+                    "gap_and_consecutive": {
+                        "pos": "len(seq) - gap_stat[0.01]",
+                        "left": false
+                    }
+                }
+            ]
+        },
+        "len(big_tmp) >= len(small_tmp)": {
+            "PAIR": [
+                {
+                    "gap_stat_val": 0.02,
+                    "pos": -1,
+                    "current_consecutive": false,
+                    "non_current_consecutive": false
+                }
+            ]
+        }
+    },
+    "连续接近时小的比大的多一些": {
+        "len(small_near_tmp) >= len(big_tmp) and len(small_near_tmp) >= len(big_near_tmp)": {
+            "GAP": [
+                {
+                    "gap_stat_val": -0.01,
+                    "mid_judge_over": false,
+                    "gap_and_consecutive": {
+                        "pos": "gap_stat[-0.01]",
+                        "left": false
+                    }
+                }
+            ],
+            "PAIR": [
+                {
+                    "gap_stat_val": -0.0,
+                    "left_val": -0.003912618500000004,
+                    "right_val": -0.001107028400000004,
+                    "pos": 0,
+                    "left_consecutive": false,
+                    "right_consecutive": false
+                }
+            ]
+        },
+        "len(small_tmp) >= len(big_tmp) and len(small_tmp) >= len(big_near_tmp)": {
+            "SKIP": [
+                {
+                    "gap_stat_val": -0.02,
+                    "skip_pos": "gap_stat[-0.02]",
+                    "shift": 1,
+                    "skip_val": -0.016812583599999986,
+                    "mid_judge_over": true,
+                    "pos_1_consecutive": false,
+                    "pos_2_consecutive": false,
+                    "opt": "<"
+                }
+            ]
+        }
+    },
+    "参差不齐接近时大的偏多": {
+        "len(big_tmp) >= len(small_tmp) and len(big_tmp) >= len(small_near_tmp)": {
+            "PAIR": [
+                {
+                    "gap_stat_val": 0.02,
+                    "pos": -1,
+                    "current_consecutive": false,
+                    "non_current_consecutive": false
+                }
+            ],
+            "SKIP": [
+                {
+                    "gap_stat_val": 0.02,
+                    "skip_pos": "len(seq)-gap_stat[0.02] - 1",
+                    "shift": -1,
+                    "skip_val": 0.017803317700000043,
+                    "mid_judge_over": false,
+                    "pos_1_consecutive": false,
+                    "pos_2_consecutive": false,
+                    "opt": ">"
+                }
+            ]
+        },
+        "len(big_near_tmp) >= len(small_tmp) and len(big_near_tmp) >= len(small_near_tmp)": {
+            "GAP": [
+                {
+                    "gap_stat_val": 0.01,
+                    "mid_judge_over": true,
+                    "gap_and_consecutive": {
+                        "pos": "len(seq) - gap_stat[0.01]",
+                        "left": false
+                    }
+                },
+                {
+                    "gap_stat_val": 0.01,
+                    "mid_judge_over": false,
+                    "gap_and_consecutive": {
+                        "pos": "len(seq) - gap_stat[0.01]",
+                        "left": false
+                    }
+                }
+            ]
+        }
+    },
+    "参差不齐接近时大小一样": {
+        "len(big_near_tmp) >= len(small_tmp)": {
+            "PAIR": [
+                {
+                    "gap_stat_val": 0.0,
+                    "left_val": 0.0011075564000000591,
+                    "right_val": 0.004847960500000009,
+                    "pos": -1,
+                    "left_consecutive": false,
+                    "right_consecutive": false
+                }
+            ]
+        },
+        "len(big_tmp) >= len(small_tmp) and len(big_tmp) >= len(small_near_tmp)": {
+            "SKIP": [
+                {
+                    "gap_stat_val": 0.02,
+                    "skip_pos": "len(seq)-gap_stat[0.02]",
+                    "shift": 1,
+                    "skip_val": 0.022691871400000008,
+                    "mid_judge_over": true,
+                    "pos_1_consecutive": false,
+                    "pos_2_consecutive": false,
+                    "opt": "<"
+                }
+            ]
+        }
+    },
+    "连续接近时大的偏多": {
+        "len(big_near_tmp) >= len(small_tmp) and len(big_near_tmp) >= len(small_near_tmp)": {
+            "GAP": [
+                {
+                    "gap_stat_val": 0.01,
+                    "mid_judge_over": false,
+                    "gap_and_consecutive": {
+                        "pos": "len(seq) - gap_stat[0.01]",
+                        "left": false
+                    }
+                },
+                {
+                    "gap_stat_val": 0.01,
+                    "mid_judge_over": false,
+                    "gap_and_consecutive": {
+                        "pos": "len(seq) - gap_stat[0.01] - 1",
+                        "left": true
+                    }
+                }
+            ],
+            "SKIP": [
+                {
+                    "gap_stat_val": 0.01,
+                    "skip_pos": "len(seq)-gap_stat[0.01] - 1",
+                    "shift": -1,
+                    "skip_val": 0.009023337000000003,
+                    "mid_judge_over": false,
+                    "pos_1_consecutive": false,
+                    "pos_2_consecutive": false,
+                    "opt": ">"
+                }
+            ]
+        }
+    },
+    "连续接近时大的比小的多一些": {
+        "len(big_near_tmp) >= len(small_tmp) and len(big_near_tmp) >= len(small_near_tmp)": {
+            "GAP": [
+                {
+                    "gap_stat_val": 0.01,
+                    "mid_judge_over": false,
+                    "gap_and_consecutive": {
+                        "pos": "len(seq) - gap_stat[0.01] - 1",
+                        "left": true
+                    }
+                }
+            ]
+        }
+    },
+    "大的全都要": {
+        "len(big_tmp) >= len(small_tmp) and len(big_tmp) >= len(small_near_tmp)": {
+            "GAP": [
+                {
+                    "gap_stat_val": 0.02,
+                    "mid_judge_over": true,
+                    "gap_and_consecutive": {
+                        "pos": "len(seq)-gap_stat[0.02]",
+                        "left": false
+                    }
+                }
+            ]
+        }
+    },
+    "不是大的就是接近的(大的偏多)": {
+        "len(big_tmp) >= len(small_tmp) and len(big_tmp) >= len(small_near_tmp)": {
+            "GAP": [
+                {
+                    "gap_stat_val": 0.03,
+                    "mid_judge_over": false,
+                    "gap_and_consecutive": {
+                        "pos": "len(seq)-gap_stat[0.03]",
+                        "left": false
+                    }
+                },
+                {
+                    "gap_stat_val": 0.02,
+                    "mid_judge_over": true,
+                    "gap_and_consecutive": {
+                        "pos": "len(seq)-gap_stat[0.02] - 1",
+                        "left": true
+                    }
+                }
+            ],
+            "SKIP": [
+                {
+                    "gap_stat_val": 0.02,
+                    "skip_pos": "len(seq)-gap_stat[0.02] - 1",
+                    "shift": -1,
+                    "skip_val": 0.01820472699999992,
+                    "mid_judge_over": false,
+                    "pos_1_consecutive": false,
+                    "pos_2_consecutive": false,
+                    "opt": ">"
+                },
+                {
+                    "gap_stat_val": 0.02,
+                    "skip_pos": "len(seq)-gap_stat[0.02] - 1",
+                    "shift": -1,
+                    "skip_val": 0.018046108699999952,
+                    "mid_judge_over": true,
+                    "pos_1_consecutive": false,
+                    "pos_2_consecutive": false,
+                    "opt": ">"
+                }
+            ]
+        }
+    },
+    "参差不齐接近时大的比小的多一些": {
+        "len(big_near_tmp) >= len(small_tmp) and len(big_near_tmp) >= len(small_near_tmp)": {
+            "PAIR": [
+                {
+                    "gap_stat_val": 0.01,
+                    "pos": -1,
+                    "current_consecutive": false,
+                    "non_current_consecutive": false
+                }
+            ]
+        }
+    }
+}
