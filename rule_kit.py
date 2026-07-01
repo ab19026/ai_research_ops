@@ -637,6 +637,7 @@ def train(seq, seq_gap, gap_stat, label, debug=True):
         rst['end_point'] = {'opt' : '>', 'val' : seq_gap[pos] - (grow_small if fmt(seq_gap[pos]) == 0 else grow_big), 'pos' : -1}
         if big or bigNear:
             rst['gap_stat_val'] = fmt(seq_gap[-1])
+            print('看一看', seq, seq_gap, pos, big, small, bigNear, smallNear, gap_stat)
             if rst['gap_stat_val'] != 0 and gap_stat[rst['gap_stat_val']] < len(seq):
                 if fmt(seq_gap[0] + eps) != fmt(seq_gap[-1] + eps):
                     rst['mid_judge_over'] = gap_stat[rst['gap_stat_val']] * 1.0 / len(seq) >= 0.5 and gap_stat[rst['gap_stat_val']] < len(seq)
@@ -678,12 +679,18 @@ def train(seq, seq_gap, gap_stat, label, debug=True):
                     rst['mid_judge_over'] = gap_stat[0.01] * 1.0 / len(seq) >= 0.5 and gap_stat[0.01] < len(seq)
                 else:
                     rst['mid_judge_over'] = gap_stat[-0.01] * 1.0 / len(seq) >= 0.5 and gap_stat[-0.01] < len(seq)
+            # since rst['gap_stat_val'] not in gap_stat and rst['gap_stat_val'] is greater than 0, so must be big
             elif rst['gap_stat_val'] == 0.01:
                 rst['mid_judge_over'] = gap_stat[0.02] * 1.0 / len(seq) >= 0.5 and gap_stat[0.01] < len(seq)
+            # since rst['gap_stat_val'] not in gap_stat and rst['gap_stat_val'] is less than 0, so must be small
             elif rst['gap_stat_val'] == -0.01:
                 rst['mid_judge_over'] = gap_stat[-0.02] * 1.0 / len(seq) >= 0.5 and gap_stat[-0.01] < len(seq)
             else:
                 raise ValueError('mid_judge_over value error', rst['gap_stat_val'])
+        elif fmt(seq_gap[0] + eps) == rst['gap_stat_val'] and big:
+            rst['mid_judge_over'] = 'big_equal'
+        elif fmt(seq_gap[-1] + eps) == rst['gap_stat_val'] and small:
+            rst['mid_judge_over'] = 'small_equal'
         else:
             rst['mid_judge_over'] = gap_stat[rst['gap_stat_val']] * 1.0 / len(seq) >= 0.5 and gap_stat[rst['gap_stat_val']] < len(seq)
     if 'left_val' in rst and 'right_val' in rst:
@@ -804,7 +811,9 @@ def predict(
                     #     arr.add(int(seq[pos + config['shift']]))
     elif config_type == 'END_POINT':
         for config in config_arr:
-            if (((config['gap_stat_val'] == 0 and (bigNear or smallNear)) or config['gap_stat_val'] in gap_stat or (small or big) and abs(config['gap_stat_val']) == 0.01) and config['mid_judge_over'] == 'equal') or midJudge(seq, gap_stat, config['gap_stat_val'], config['mid_judge_over']):
+            cond_a = ((config['gap_stat_val'] == 0 and (bigNear or smallNear)) or config['gap_stat_val'] in gap_stat or (small or big) and abs(config['gap_stat_val']) == 0.01) and config['mid_judge_over'] == 'equal' and fmt(seq_gap[0] + eps) == fmt(seq_gap[-1] + eps)
+            cond_b = config['gap_stat_val'] in gap_stat and midJudge(seq, gap_stat, config['gap_stat_val'], config['mid_judge_over'])
+            if cond_a or cond_b:
                 pos = config['end_point']['pos']
                 if eval('seq_gap[pos] ' + config['end_point']['opt'] + ' ' + str(config['end_point']['val'])):
                     # arr.add(int(seq[pos]))
@@ -823,7 +832,15 @@ def predict(
         right_valid = False
         if len(seq_gap_single) > 2:
             for config in config_arr:
-                if (((config['gap_stat_val'] == 0 and (bigNear or smallNear)) or config['gap_stat_val'] in gap_stat or (small or big) and abs(config['gap_stat_val']) == 0.01) and config['mid_judge_over'] == 'equal') or midJudge(seq, gap_stat, config['gap_stat_val'], config['mid_judge_over']):
+                cond_a = ((config['gap_stat_val'] == 0 and (bigNear or smallNear)) or config['gap_stat_val'] in gap_stat or (small or big) and abs(config['gap_stat_val']) == 0.01) and config['mid_judge_over'] == 'equal' and fmt(seq_gap[0] + eps) == fmt(seq_gap[-1] + eps)
+                cond_b = config['gap_stat_val'] in gap_stat and midJudge(seq, gap_stat, config['gap_stat_val'], config['mid_judge_over'])
+                cond_c = config['gap_stat_val'] == 0 and bigNear and midJudge(seq, gap_stat, 0.01, config['mid_judge_over'])
+                cond_d = config['gap_stat_val'] == 0 and smallNear and midJudge(seq, gap_stat, -0.01, config['mid_judge_over'])
+                cond_e = config['gap_stat_val'] == 0.01 and big and midJudge(seq, gap_stat, 0.02, config['mid_judge_over'])
+                cond_f = config['gap_stat_val'] == -0.01 and small and midJudge(seq, gap_stat, -0.02, config['mid_judge_over'])
+                cond_g = config['gap_stat_val'] == fmt(seq_gap[0] + eps) and config['mid_judge_over'] == 'big_equal' and big and fmt(seq_gap[0] + eps) != fmt(seq_gap[-1] + eps)
+                cond_h = config['gap_stat_val'] == fmt(seq_gap[-1] + eps) and config['mid_judge_over'] == 'small_equal' and small and fmt(seq_gap[0] + eps) != fmt(seq_gap[-1] + eps)
+                if cond_a or cond_b or cond_c or cond_d or cond_e or cond_f or cond_g or cond_h:
                     for p in range(len(seq)):
                         if fmt(seq_gap[p]) == config['gap_stat_val']:
                             left_valid = False
