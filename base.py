@@ -19,29 +19,21 @@ import os, sys, shutil
 from datetime import date
 from base_kit import *
 
+def dict_stat(d, k):
+    if k in d:
+        d[k] += 1.0
+    else:
+        d[k] = 1.0
 
-# def generateSegmentForPureTimeSeries(arr, input_chunk_length, output_chunk_length, test_set_size, val_set_size, skip=True):
-#     arr = np.array(arr).T
-#     train_set = None
-#     test_set = None
-#     val_set = None
-#     pred = None
-#     all_len = len(arr)
-#     test_len = input_chunk_length + output_chunk_length + test_set_size
-#     val_len = input_chunk_length + output_chunk_length + ((val_set_size * (output_chunk_length) - output_chunk_length) if skip else val_set_size)
-#     train_set = arr[:all_len - test_len - val_len - input_chunk_length]
-#     test_set = arr[all_len - test_len - val_len - input_chunk_length : all_len - val_len - input_chunk_length]
-#     val_set = arr[all_len - val_len - input_chunk_length : all_len - input_chunk_length]
-#     pred = arr[-input_chunk_length:]
-#     train_series = TimeSeries.from_values(train_set)
-#     test_series = TimeSeries.from_values(test_set)
-#     val_series_arr = []
-#     for i in range(val_set_size):
-#         pos = (i * output_chunk_length) if skip else i
-#         val_series_arr.append({'train' : TimeSeries.from_values(val_set[pos : pos + input_chunk_length]), 'val' : val_set[pos + input_chunk_length : pos + input_chunk_length + output_chunk_length]})
-#     pred_series = TimeSeries.from_values(pred)
-#     return train_series, test_series, val_series_arr, pred_series
+SMOOTH_SMA = 'SMA'
+SMOOTH_EMA_WINDOW = 'EMA_WINDOW'
+SMOOTH_EMA_STATE = 'EMA_STATE'
 
+VALID_SMOOTH_MODES = {
+    SMOOTH_SMA,
+    SMOOTH_EMA_WINDOW,
+    SMOOTH_EMA_STATE
+}
 
 def reverseArr(arr):
     result = []
@@ -49,6 +41,82 @@ def reverseArr(arr):
         result.append(arr[i].T)
     return np.array(result)
 
+def resolve_ema_alpha(
+        avg_window,
+        ema_alpha=None):
+
+    if avg_window <= 0:
+        raise ValueError(
+            'avg_window must be greater than 0'
+        )
+
+    if ema_alpha is None:
+        # 常用 span 与 alpha 的换算
+        ema_alpha = 2.0 / (
+            avg_window + 1.0
+        )
+
+    ema_alpha = float(
+        ema_alpha
+    )
+
+    if not 0.0 < ema_alpha <= 1.0:
+        raise ValueError(
+            'ema_alpha must be in (0, 1]'
+        )
+
+    return ema_alpha
+
+
+def window_exp_avg(
+        values,
+        alpha):
+
+    values = np.asarray(
+        values,
+        dtype=np.float64
+    )
+
+    if values.ndim != 1:
+        raise ValueError(
+            'window_exp_avg expects '
+            'a one-dimensional sequence'
+        )
+
+    if len(values) == 0:
+        raise ValueError(
+            'window_exp_avg requires '
+            'at least one value'
+        )
+
+    if not 0.0 < alpha <= 1.0:
+        raise ValueError(
+            'alpha must be in (0, 1]'
+        )
+
+    # values 顺序为从旧到新。
+    # 最新值的指数是 0，因此权重最大。
+    powers = np.arange(
+        len(values) - 1,
+        -1,
+        -1,
+        dtype=np.float64
+    )
+
+    weights = (
+        1.0 - alpha
+    ) ** powers
+
+    # 窗口 EMA 必须归一化，
+    # 避免窗口首值因初始化被异常放大。
+    weights /= weights.sum()
+
+    return float(
+        np.dot(
+            values,
+            weights
+        )
+    )
 
 def generateProbRaw(start, combine, name, label_pos):
     lookbacks = combine
@@ -57,7 +125,7 @@ def generateProbRaw(start, combine, name, label_pos):
         for line in file:
             line = line.replace('\n', '').split(' ')
             label.append(int(line[label_pos+1]))
-        print('最后', line, label_pos, line[label_pos+1])
+        print('最后是什么', line, label_pos, line[label_pos+1])
         x_raw = [[] for i in range(len(lookbacks))]
         y_raw = [[] for i in range(len(lookbacks))]
         for lookback_pos in range(len(lookbacks)):
@@ -75,9 +143,6 @@ def generateProbRaw(start, combine, name, label_pos):
                     stat[k] = (stat[k] - mi) / (mx - mi)
                 x_raw[lookback_pos].append([stat[s] for s in range(len(stat))])
                 y_raw[lookback_pos].append(stat[current] if current > -1 else current)
-    # for i in range(len(x_raw)):
-    #     y_raw[i] = y_raw[i][0::2] if len(y_raw[i]) % 2 == 0 else y_raw[i][1::2]
-    #     x_raw[i] = x_raw[i][0::2] if len(x_raw[i]) % 2 == 0 else x_raw[i][1::2]
     return x_raw, y_raw
 
 
@@ -109,8 +174,35 @@ def generateProbRawByLabel(start, combine, name, label_pos_array):
 
 
 ''' RMEMBER!!! ODD X EVEN, NOT COMPATIABLE!!!!!!!! '''
-def loadProbRaw(start, combine, names, name, label_pos, time_window, avg_window, mode='ALL_LABEL', enrich=None, reverse=False, sample_mode='random', debug=True, shrink=True, label_pos_array=None, output_chunk_length=None, pred_len=7):
-    test_rate = 0.01
+def loadProbRaw(start, combine, names, name, label_pos, time_window, avg_window, mode='ALL_LABEL', enrich=None, reverse=False, sample_mode='random', debug=True, shrink=True, label_pos_array=None, output_chunk_length=None, pred_len=7, smoothing_mode=SMOOTH_EMA_STATE, ema_alpha=None):
+    test_rate = 0.05
+    smoothing_mode = (
+        smoothing_mode.upper()
+    )
+    if (
+        smoothing_mode
+        not in VALID_SMOOTH_MODES
+    ):
+        raise ValueError(
+            'smoothing_mode must be one of '
+            f'{sorted(VALID_SMOOTH_MODES)}, '
+            f'got {smoothing_mode}'
+        )
+    resolved_ema_alpha = (
+        resolve_ema_alpha(
+            avg_window,
+            ema_alpha
+        )
+        if smoothing_mode
+        != SMOOTH_SMA
+        else None
+    )
+    print(
+        'smoothing:',
+        smoothing_mode,
+        'alpha:',
+        resolved_ema_alpha
+    )
     if names:
         y_raw = [[] for i in range(len(names))]
         y_on_prob_raw = [[] for i in range(len(names))]
@@ -154,6 +246,12 @@ def loadProbRaw(start, combine, names, name, label_pos, time_window, avg_window,
     all_label_prob = []
     all_label_prob_accum = []
     show = []
+    ema_state = [
+        None
+        for _ in range(h_len)
+    ]
+    candidate_level_time_series = []
+    target_candidate_levels = []
     for i in range(v_len):
         if y_raw[0][i] == -1:
             py_all_label.append([y_raw[j][i] for j in range(h_len)])
@@ -163,15 +261,146 @@ def loadProbRaw(start, combine, names, name, label_pos, time_window, avg_window,
         else:
             y_all_label.append([y_raw[j][i] for j in range(h_len)])
             x_all_label.append([x_raw[j][i] for j in range(h_len)])
-        #prepare time series on prob
+        #prepare time series on prob by EMA
         if i >= avg_window - 1:
             if y_raw[0][i] != -1:
                 for j in range(h_len):
-                    y_on_prob_raw[j].append(np.mean(y_raw[j][i + 1 - avg_window : i + 1]))
-                    #y_on_prob_raw[j].append(exp_avg(y_raw[j][i + 1 - avg_window : i + 1], 0.5))
+                    if smoothing_mode == SMOOTH_SMA:
+                        smooth_value = np.mean(
+                            y_raw[j][
+                                i + 1 - avg_window:
+                                i + 1
+                            ]
+                        )
+
+                    elif (
+                        smoothing_mode
+                        == SMOOTH_EMA_WINDOW
+                    ):
+                        smooth_value = (
+                            window_exp_avg(
+                                y_raw[j][
+                                    i + 1 - avg_window:
+                                    i + 1
+                                ],
+                                resolved_ema_alpha
+                            )
+                        )
+
+                    else:
+                        # 标准递推 EMA。
+                        #
+                        # 第一个有效状态使用最初
+                        # avg_window 个值的均值初始化，
+                        # 比直接使用第一个值稳定。
+                        if ema_state[j] is None:
+                            ema_state[j] = float(
+                                np.mean(
+                                    y_raw[j][
+                                        i + 1 - avg_window:
+                                        i + 1
+                                    ]
+                                )
+                            )
+                        else:
+                            ema_state[j] = (
+                                (
+                                    1.0
+                                    - resolved_ema_alpha
+                                )
+                                * ema_state[j]
+                                + resolved_ema_alpha
+                                * y_raw[j][i]
+                            )
+
+                        smooth_value = (
+                            ema_state[j]
+                        )
+
+                    y_on_prob_raw[j].append(
+                        smooth_value
+                    )
+
             else:
-                for al in range(len(x_raw[0][0])):
-                    all_label_prob_accum.append([np.mean(y_raw[j][i - avg_window + 1: i] + [x_raw[j][i][al]]) for j in range(h_len)])
+                # 当前 i 是未知的下一期。
+                # 为每一个候选类别计算：
+                # “假设下一期为该类别”时的平滑值。
+                for al in range(
+                    len(x_raw[0][0])
+                ):
+                    candidate_smooth_values = []
+
+                    for j in range(h_len):
+                        candidate_value = (
+                            x_raw[j][i][al]
+                        )
+
+                        if (
+                            smoothing_mode
+                            == SMOOTH_SMA
+                        ):
+                            candidate_smooth_value = (
+                                np.mean(
+                                    y_raw[j][
+                                        i - avg_window + 1:
+                                        i
+                                    ] + [
+                                        candidate_value
+                                    ]
+                                )
+                            )
+
+                        elif (
+                            smoothing_mode
+                            == SMOOTH_EMA_WINDOW
+                        ):
+                            candidate_smooth_value = (
+                                window_exp_avg(
+                                    y_raw[j][
+                                        i - avg_window + 1:
+                                        i
+                                    ] + [
+                                        candidate_value
+                                    ],
+                                    resolved_ema_alpha
+                                )
+                            )
+
+                        else:
+                            if ema_state[j] is None:
+                                raise ValueError(
+                                    'EMA state was not '
+                                    'initialized before '
+                                    'target prediction'
+                                )
+
+                            # 不修改真实 ema_state，
+                            # 仅计算这个候选的假设下一状态。
+                            candidate_smooth_value = (
+                                (
+                                    1.0
+                                    - resolved_ema_alpha
+                                )
+                                * ema_state[j]
+                                + resolved_ema_alpha
+                                * candidate_value
+                            )
+
+                        candidate_smooth_values.append(
+                            candidate_smooth_value
+                        )
+
+                    all_label_prob_accum.append(
+                        candidate_smooth_values
+                    )
+        #prepare time series on prob by SMA
+        # if i >= avg_window - 1:
+        #     if y_raw[0][i] != -1:
+        #         for j in range(h_len):
+        #             y_on_prob_raw[j].append(np.mean(y_raw[j][i + 1 - avg_window : i + 1]))
+        #     else:
+        #         for al in range(len(x_raw[0][0])):
+        #             all_label_prob_accum.append([np.mean(y_raw[j][i - avg_window + 1: i] + [x_raw[j][i][al]]) for j in range(h_len)])
         # direct time series
         if i >= avg_window:
             segment = [y_raw[j][i - avg_window : i] for j in range(h_len)]
@@ -188,6 +417,7 @@ def loadProbRaw(start, combine, names, name, label_pos, time_window, avg_window,
     # time series on prob
     for i in range(len(y_on_prob_raw[0])):
         if i >= time_window:
+            # 平滑
             if y_on_prob_raw[0][i] == -1:
                 px_on_prob_time_series.append([y_on_prob_raw[j][i - time_window : i] for j in range(h_len)])
                 py_on_prob_time_series.append([y_on_prob_raw[j][i] for j in range(h_len)])
@@ -200,13 +430,10 @@ def loadProbRaw(start, combine, names, name, label_pos, time_window, avg_window,
         left = k
         middle = ["%.10f" % n for n in all_label_prob[k]]
         right = ["%.10f" % n for n in all_label_prob_accum[k]]
-        #print(left, middle, right)
         show.append([left, middle, right])
     if mode == 'PURE_TIME_SERIES':
         if shrink:
             y_on_prob_raw = [v[0::2] if len(v) % 2 == 0 else v[1::2] for v in y_on_prob_raw]
-        #train_series, test_series, val_series_arr, pred_series = generateSegmentForPureTimeSeries(y_on_prob_raw, time_window, output_chunk_length, int(len(y_on_prob_raw) * test_rate), int(pred_len / output_chunk_length))
-        #return {'train_series' : train_series, 'test_series' : test_series, 'val_series_arr' : val_series_arr, 'pred_series' : pred_series}, show
     elif mode == 'ALL_LABEL':
         x_all_label = np.array(x_all_label)
         y_all_label = np.array(y_all_label)
@@ -252,23 +479,37 @@ def loadProbRaw(start, combine, names, name, label_pos, time_window, avg_window,
         if shrink:
             x_on_prob_time_series = x_on_prob_time_series[0::2] if len(x_on_prob_time_series) % 2 == 0 else x_on_prob_time_series[1::2]
             y_on_prob_time_series = y_on_prob_time_series[0::2] if len(y_on_prob_time_series) % 2 == 0 else y_on_prob_time_series[1::2]
-            # x_on_prob_time_series = x_on_prob_time_series[0::3] if len(x_on_prob_time_series) % 2 == 0 else x_on_prob_time_series[1::3]
-            # y_on_prob_time_series = y_on_prob_time_series[0::3] if len(y_on_prob_time_series) % 2 == 0 else y_on_prob_time_series[1::3]
         x_pred = x_on_prob_time_series[-pred_len:]
         y_pred = y_on_prob_time_series[-pred_len:]
         y_pred_previous = y_on_prob_time_series[-(pred_len*5):-pred_len:]
-        gap = int(time_window + 4)
+        gap = int(time_window + 4) - 10
         x_data = x_on_prob_time_series[:-(pred_len + gap)]
         y_data = y_on_prob_time_series[:-(pred_len + gap)]
         all_pos = [i for i in range(len(y_data))]
         test_len = int(len(all_pos) * test_rate)
         test_pos = np.random.choice(all_pos, test_len, replace=False)
-        #test_pos = all_pos[0::10]
         train_pos = [v for v in all_pos if v not in test_pos]
         if sample_mode == 'random':
             return {'train' : { 'x' : np.array([x_data[pos] for pos in train_pos]), 'y' : np.array([y_data[pos] for pos in train_pos])}, 'test' : {'x' : np.array([x_data[pos] for pos in test_pos]), 'y' : np.array([y_data[pos] for pos in test_pos])}, 'pred' : {'x' : x_pred, 'y' : y_pred}, 'target' : {'x' : np.array(px_on_prob_time_series), 'y' : np.array(py_on_prob_time_series)}}, y_pred_previous, show
         elif sample_mode == 'latest':
-            return {'train' : {'x' : x_data[:-(test_len + gap)], 'y' : y_data[:-(test_len + gap)]}, 'test' : {'x' : x_data[-test_len:], 'y' : y_data[-test_len:]}, 'pred' : {'x' : x_pred, 'y' : y_pred}, 'target' : {'x' : np.array(px_on_prob_time_series), 'y' : np.array(py_on_prob_time_series)}}, y_pred_previous, show
+            return {
+                'train' : {
+                    'x' : x_data[:-(test_len + gap)], 
+                    'y' : y_data[:-(test_len + gap)]
+                }, 
+                'test' : {
+                    'x' : x_data[-test_len:], 
+                    'y' : y_data[-test_len:]
+                }, 
+                'pred' : {
+                    'x' : x_pred, 
+                    'y' : y_pred
+                }, 
+                'target' : {
+                    'x' : np.array(px_on_prob_time_series), 
+                    'y' : np.array(py_on_prob_time_series)
+                }
+            }, y_pred_previous, show
 
 def mean(arr):
     return np.mean(arr) if len(arr) > 0 else 0

@@ -1,31 +1,31 @@
 count=0
 name=$1
 avg_window=14
-rm -rf $name/metric/*
+#rm -rf $name/metric/*
 while [ $count -lt 5 ]
 do
     run=`ps -ef | grep latest`
     if [[ ! $run =~ "67108864" ]]; then
         rm -rf *.h5
-        # if test -f $name/metric/crt_avg_win; then
-        #     let avg_window=$(cat $name/metric/crt_avg_win)
-        #     if [ $avg_window -lt 16 ]; then
-        #         let avg_window=avg_window+1
-        #     else
-        #         let avg_window=14
-        #     fi
-        #     echo $avg_window > $name/metric/crt_avg_win
-        # else
-        #     echo 14 > $name/metric/crt_avg_win
-        # fi
+        if test -f $name/metric/crt_avg_win; then
+            let avg_window=$(cat $name/metric/crt_avg_win)
+            if [ $avg_window -lt 16 ]; then
+                let avg_window=avg_window+1
+            else
+                let avg_window=14
+            fi
+            echo $avg_window > $name/metric/crt_avg_win
+        else
+            echo 14 > $name/metric/crt_avg_win
+        fi
         if [[ "$name" == qxc ]]; then
-            nohup bash run.sh 0 200,1500,5 latest "$avg_window" 0.03 "$name" 1 &
-            nohup bash run.sh 1 200,1500,5 latest "$avg_window" 0.03 "$name" 1 &
-            nohup bash run.sh 2 200,1500,5 latest "$avg_window" 0.03 "$name" 1 &
-            nohup bash run.sh 3 200,1500,5 latest "$avg_window" 0.03 "$name" 1 &
-            nohup bash run.sh 4 200,1500,5 latest "$avg_window" 0.03 "$name" 1 &
-            nohup bash run.sh 5 200,1500,5 latest "$avg_window" 0.03 "$name" 1 &
-            nohup bash run.sh 6 200,1500,5 latest "$avg_window" 0.03 "$name" 1 &
+            nohup bash run.sh 0 250,1500,5 latest $avg_window 0.03 "$name" 1 EMA_STATE &
+            nohup bash run.sh 1 250,1500,5 latest $avg_window 0.03 "$name" 1 EMA_STATE &
+            nohup bash run.sh 2 250,1500,5 latest $avg_window 0.03 "$name" 1 EMA_STATE &
+            nohup bash run.sh 3 250,1500,5 latest $avg_window 0.03 "$name" 1 EMA_STATE &
+            nohup bash run.sh 4 260,1500,5 latest $avg_window 0.03 "$name" 1 EMA_STATE &
+            nohup bash run.sh 5 260,1500,5 latest $avg_window 0.03 "$name" 1 EMA_STATE &
+            nohup bash run.sh 6 200,1500,5 latest $avg_window 0.03 "$name" 1 EMA_STATE &
         elif [[ "$name" == qxc_full ]]; then
             nohup bash run.sh 0 245,1500,5 latest "$avg_window" 0.03 "$name" 0 &
             nohup bash run.sh 1 235,1500,5 latest "$avg_window" 0.03 "$name" 0 &
@@ -39,16 +39,16 @@ do
             if [ -d "$name/metric" ] && [ "$(ls $name/metric)" ]; then
                 dt=$(head -n1 pls_future | awk '{print $1}' | tr -d '-')
                 if [ -d "$name/$dt" ] && [ "$(ls $name/$dt)" ]; then
-                    python3 base.py MERGE 0 $name $dt metric
-                    python3 base.py MERGE 1 $name $dt metric
-                    python3 base.py MERGE 2 $name $dt metric
+                    python base.py MERGE 0 $name $dt metric
+                    python base.py MERGE 1 $name $dt metric
+                    python base.py MERGE 2 $name $dt metric
                     rm -rf $name/metric/*
                 else
                     mkdir $name/$dt
                     mv $name/metric/* $name/$dt
                 fi
             fi
-            head -n 1 pls_future >> pls_raw_txt && sed -i '.bak' '1d' pls_future
+            head -n 1 pls_future >> pls_raw_txt && sed -i '1d' pls_future
             # nohup bash run.sh 0 200,1500,5 latest "$avg_window" 0.03 "$name" 0 &
             # nohup bash run.sh 0 210,1500,5 latest "$avg_window" 0.04 "$name" 0 &
             # nohup bash run.sh 0 220,1500,5 latest "$avg_window" 0.05 "$name" 0 &

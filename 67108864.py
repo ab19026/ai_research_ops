@@ -7,7 +7,10 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 from tensorflow.keras.backend import clear_session
 import tensorflow as tf
-from xgboost import XGBClassifier
+try:
+    from xgboost import XGBClassifier
+except:
+    pass
 from sklearn.metrics import accuracy_score
 tf.config.experimental.set_visible_devices([], 'GPU')
 
@@ -17,24 +20,15 @@ USE_MODE_CNN = 'USE_MODE_CNN'
 USE_MODE_DART = 'USE_MODE_DART'
 
 
-
 def prepare_cnn_inner(raw, label_dim, drop_rate):
     dim_size = DIMENSION
     inputs = raw['x']
-    #inputs = (TokenEmbedding(dim_size)(inputs) + PositionalEmbedding(dim_size)(inputs))
     use1d = len(inputs.shape) < 4
-    outputs = Conv1D(filters=dim_size, kernel_size=1, activation=PReLU())(inputs) if use1d else Conv2D(filters=dim_size, kernel_size=(1,1),strides=(1,1), activation=PReLU())(inputs)
-    #outputs = GroupNormalization(groups=16)(outputs)
-    #outputs = Dropout(0.1)(outputs)
+    outputs = Conv1D(filters=dim_size, kernel_size=5, activation=PReLU())(inputs) if use1d else Conv2D(filters=dim_size, kernel_size=(1,1),strides=(1,1), activation=PReLU())(inputs)
     outputs = Conv1D(filters=dim_size, kernel_size=1, activation=PReLU())(outputs) if use1d else Conv2D(filters=dim_size, kernel_size=(1,1),strides=(1,1), activation=PReLU())(outputs)
-    #outputs = GroupNormalization(groups=16)(outputs)
-    # outputs = Dropout(0.1)(outputs)
-    outputs = MaxPooling1D(pool_size=1,strides=1)(outputs) if use1d else MaxPooling2D(pool_size=(1,1),strides=1)(outputs)
     outputs = Flatten()(outputs)
-    # outputs = Dense(dim_size, activation='tanh')(outputs)
-    # outputs = Dropout(0.1)(outputs)
-    outputs = Dense(label_dim)(outputs)
     outputs = Dropout(drop_rate)(outputs)
+    outputs = Dense(label_dim)(outputs)
     print('what drop rate:', drop_rate)
     return outputs
 
@@ -333,11 +327,7 @@ def model_vote(name_list, data_arr, verbose=True, method='AVG', label_pos=None, 
         debug_pred_target(target_result, result_merge['target'])
 
 
-def dict_stat(d, k):
-    if k in d:
-        d[k] += 1.0
-    else:
-        d[k] = 1.0
+
 
 def model_select(name, data, verbose=False, label_pos=None, pred_target=None):
     if name == 'XGB':
@@ -487,42 +477,43 @@ def model_select(name, data, verbose=False, label_pos=None, pred_target=None):
     print("\ntest accuarcy: %.2f%%" % (test_acc*100.0))
     return test_acc, pred_result, target_result
 
-
-
 def prepare_cnn_category_model(raw, label_dim, drop_rate):
     outputs = prepare_cnn_inner(raw, label_dim, drop_rate)
     outputs = Activation(activation='sigmoid')(outputs)
-    #outputs = Activation(activation='softmax')(outputs)
     return outputs
 
 def prepare_cnn_regression_model(raw, label_dim, drop_rate):
     outputs = prepare_cnn_inner(raw, label_dim, drop_rate)
     outputs = Activation(PReLU())(outputs)
-    #LeakyReLU(negative_slope=0.6)
     return outputs
 
-def model_train_and_predict(train=None, test=None, pred=None, target=True, debug=True, label_mode='REG', drop_rate=None, remaining=None, checkpoint=False, for_secondary_train=None, direct=True, verbose=True):
+
+def model_train_and_predict(train=None, test=None, pred=None, target=True, debug=True, label_mode='REG', drop_rate=None, direct=True, remaining=None):
+    train['x'] = np.transpose(train['x'], (0, 2, 1))
+    test['x'] = np.transpose(test['x'], (0, 2, 1))
+    pred['x'] = np.transpose(pred['x'], (0, 2, 1))
+    target['x'] = np.transpose(target['x'], (0, 2, 1))
     if label_mode not in ['REG', 'CAT']:
-        print('label_mode must be REG or CAT!')
-        exit()
+        raise ValueError('label_mode must be REG, CAT')
     label_dim = len(train['y'][0]) if (isinstance(train['y'][0], list) or isinstance(train['y'][0], numpy.ndarray)) else 1
     inputs = {
         'x' : Input(shape=(train['x'][0].shape), name='x'),
-        #'extract_feature' : gen_input(1281, len(train['e_extract_feature'][0]), len(train['e_extract_feature'][0][0]) if isinstance(train['e_extract_feature'][0][0], list) or isinstance(train['e_extract_feature'][0][0], numpy.ndarray) else 1)
     }
     if debug:
         print('输入shape')
-        print('x', inputs['x'].shape, train['x'].shape)
-        #print('extract_feature', inputs['extract_feature'].shape, r_train['extract_feature'].shape)
-        print(train['y'].shape)
+        print('train', train['x'].shape)
+        print('test', test['x'].shape)
+        print('pred', pred['x'].shape)
+        print('target', target['x'].shape)
     outputs = None
     if label_mode == 'CAT':
+        output_dim = label_dim
         prepare_model_func = prepare_cnn_category_model
     else:
+        output_dim = label_dim
         prepare_model_func = prepare_cnn_regression_model
-    outputs = prepare_model_func(inputs, label_dim, drop_rate)
+    outputs = prepare_model_func(inputs, output_dim, drop_rate)
     model = Model(inputs=inputs, outputs=outputs)
-    golden_or = AdamW(learning_rate=0.000001)
     #categorical_focal_crossentropy
     #categorical_accuracy
     #binary_focal_crossentropy
@@ -533,10 +524,14 @@ def model_train_and_predict(train=None, test=None, pred=None, target=True, debug
     #focalLoss = CategoricalFocalCrossentropy(alpha=0.75,gamma=2)
     normalLoss = BinaryCrossentropy()
     #normalLoss = CategoricalCrossentropy()
-    batch_size=128
+    batch_size=32
     if label_mode == 'CAT':
+        monitor_name = 'val_binary_accuracy'
+        monitor_mode = 'max'
         model.compile(optimizer=AdamW(learning_rate=0.00001), loss=focalLoss, metrics=["binary_accuracy"])
     else:
+        monitor_name = 'val_loss'
+        monitor_mode = 'min'
         model.compile(optimizer=AdamW(learning_rate=0.0001), loss='log_cosh')
     if debug:
         print(model.summary())
@@ -547,17 +542,15 @@ def model_train_and_predict(train=None, test=None, pred=None, target=True, debug
     model_checkpoint_callback = keras.callbacks.ModelCheckpoint(
         filepath=checkpoint_filepath,
         save_weights_only=True,
-        monitor='val_binary_accuracy' if label_mode == 'CAT' else 'val_loss',
-        mode='max' if label_mode == 'CAT' else 'min',
-        # monitor = 'val_loss',
-        # mode = 'min',
+        monitor=monitor_name,
+        mode=monitor_mode,
         save_best_only=True)
-    history = model.fit(train, train['y'], 
-        validation_data=(test, test['y']),
+    history = model.fit({'x': train['x']}, train['y'], 
+        validation_data=({'x': test['x']}, test['y']),
         batch_size=batch_size,
         callbacks=[model_checkpoint_callback],
-        epochs=50,
-        verbose=verbose)
+        epochs=200,
+        verbose=debug)
     # if debug and label_mode=='CAT':
     #     import matplotlib.pyplot as plt
     #     # 获取训练和验证的准确率
@@ -575,8 +568,8 @@ def model_train_and_predict(train=None, test=None, pred=None, target=True, debug
     #     plt.show()
     model.load_weights(checkpoint_filepath)
     secondary_data = None
-    test_pred = model.predict(test, batch_size=batch_size)
-    train_pred = model.predict(train, batch_size=batch_size)
+    test_pred = model.predict({'x': test['x']}, batch_size=batch_size)
+    train_pred = model.predict({'x': train['x']}, batch_size=batch_size)
     train_result = {'y' : train['y'], 'pred' : train_pred}
     test_result = {'y' : test['y'], 'pred' : test_pred}
     pred_result = {}
@@ -600,14 +593,7 @@ def model_train_and_predict(train=None, test=None, pred=None, target=True, debug
         else:
             target_pred = None
             target_y = None
-        if for_secondary_train is not None:
-            train_y = [train['y'][i] for i in range(len(train['y']))]
-            test_y = [test['y'][i] for i in range(len(test['y']))]
-            del train['y']
-            del test['y']
-            secondary_data = for_secondary_train(train['x'], train_pred, train_y, test['x'], test_pred, test_y, pred['x'], pred_pred, pred_y, target['x'], target_pred)
     else:
-        secondary_data = {'train' : train, 'train_pred' : train_pred, 'test' : test, 'test_pred' : test_pred}
         for dt in pred:
             pred_result[dt] = {}
             pred_x = {}
@@ -626,35 +612,28 @@ def model_train_and_predict(train=None, test=None, pred=None, target=True, debug
                 target_result[dt][label_dim]['y'] = target[dt][label_dim]['y']
                 target_result[dt][label_dim]['x'] = target[dt][label_dim]['x']
                 target_result[dt][label_dim]['pred'] = model.predict(target_x[label_dim], batch_size=batch_size)
-    # gc
     clear_session()
     del model
     try:
         os.remove(checkpoint_filepath)
     except:
         pass
-    return train_result, test_result, pred_result, target_result, secondary_data
+    return train_result, test_result, pred_result, target_result
 
 
 
-def execute_secondary_global(name, exclude_dt, acc_sample_num, target_dt, pred_dt, test_ratio, label_pos, label_mode, drop_rate):
+def execute_secondary_global(name, exclude_dt, acc_sample_num, target_dt, pred_dt, test_ratio, label_pos):
     data, pred_target = load_secondary(name, exclude_dt, acc_sample_num, target_dt, pred_dt, test_ratio)
     model_vote(['CNN'], data, verbose=True, method='AVG', label_pos=label_pos, pred_target=pred_target)
     
 
 
-def execute_single(name, mode, shrink, label_and_combine, metric_mode, avg_window, drop_rate, pred_len):
+def execute_single(name, mode, shrink, label_and_combine, metric_mode, avg_window, drop_rate, pred_len, smoothing_mode=SMOOTH_EMA_STATE, ema_alpha=None):
     with open(name.split('_')[0] + '_raw_txt') as file:
-        label = []
         for line in file:
             line = line.replace('\n', '').split(' ')
     output_chunk_length=2
     data_mode = 'PROB_TIME_SERIES'
-    #PROB_TIME_SERIES
-    #PURE_TIME_SERIES
-    external = None
-    pred_y = None
-    show_info = True
     cv_len = 1
     time_window=int(avg_window*3)
     label_dim = label_and_combine[0]
@@ -672,19 +651,17 @@ def execute_single(name, mode, shrink, label_and_combine, metric_mode, avg_windo
     final_target_pred = None
     prob_cand_html = ''
     validate_html = ''
-    secondary_data = None
     for i in range(cv_len):
         if ':' in label_dim:
-            data,y_pred_previous,show = loadProbRaw(combine[-1], combine, None, name.split('_')[0] + '_raw_txt', None, time_window, avg_window, mode=data_mode, enrich=None, reverse=False, sample_mode=metric_mode, debug=False, shrink=shrink, label_pos_array=[int(v) for v in label_dim.split(':')], output_chunk_length=output_chunk_length, pred_len=pred_len)
+            data,y_pred_previous,show = loadProbRaw(combine[-1], combine, None, name.split('_')[0] + '_raw_txt', None, time_window, avg_window, mode=data_mode, enrich=None, reverse=False, sample_mode=metric_mode, debug=False, shrink=shrink, label_pos_array=[int(v) for v in label_dim.split(':')], output_chunk_length=output_chunk_length, pred_len=pred_len, smoothing_mode=smoothing_mode, ema_alpha=ema_alpha)
         else:
-            data,y_pred_previous,show = loadProbRaw(combine[-1], combine, None, name.split('_')[0] + '_raw_txt', int(label_dim), time_window, avg_window, mode=data_mode, enrich=None, reverse=False, sample_mode=metric_mode, debug=False, shrink=shrink, output_chunk_length=output_chunk_length, pred_len=pred_len)          
+            data,y_pred_previous,show = loadProbRaw(combine[-1], combine, None, name.split('_')[0] + '_raw_txt', int(label_dim), time_window, avg_window, mode=data_mode, enrich=None, reverse=False, sample_mode=metric_mode, debug=False, shrink=shrink, output_chunk_length=output_chunk_length, pred_len=pred_len, smoothing_mode=smoothing_mode, ema_alpha=ema_alpha)
         if data_mode == 'PURE_TIME_SERIES':
             pass#pred_pred, pred_y, target_pred = dart_test(data, model_use=DART_MODEL_N_LINEAR,input_chunk_length=time_window,output_chunk_length=output_chunk_length)
         else:
-            train_result, test_result, pred_result, target_result, secondary_data = model_train_and_predict(train=data['train'], test=data['test'], pred=data['pred'], target=data['target'], debug=(mode==MODE_SHOW), label_mode=label_mode, drop_rate=drop_rate, remaining=None, checkpoint=True, for_secondary_train=None)
+            train_result, test_result, pred_result, target_result = model_train_and_predict(train=data['train'], test=data['test'], pred=data['pred'], target=data['target'], debug=(mode==MODE_SHOW), label_mode=label_mode, drop_rate=drop_rate)
         for row in show:
-            if show_info:
-                print(row)
+            print(row)
             prob_cand_html += str(row) + '<br\\>'
         del data
         if final_pred_pred is None:
@@ -701,16 +678,14 @@ def execute_single(name, mode, shrink, label_and_combine, metric_mode, avg_windo
     for j in range(len(y_pred_previous)):
         ypp = np.append(y_pred_previous[j], y_pred_previous[j][0])
         validate_html += str(ypp) + '----' + str(ypp) + '<br\\>'
-        if show_info:
-            print(ypp, '----', ypp)
+        print(ypp, '----', ypp)
     for i in range(len(final_pred_pred)):
         if len(final_pred_pred[i]) == 1 and len(pred_result['y'][i]) == 1:
             fpp = np.append(final_pred_pred[i], final_pred_pred[i][0])
             py = np.append(pred_result['y'][i], pred_result['y'][i][0])
         validate_html += str(fpp) + '----' + str(py) + '<br\\>'
-        if show_info:
-            print(fpp, '----', py)
-            pair = abs(fpp - py)
+        print(fpp, '----', py)
+        pair = abs(fpp - py)
         if pair[0] <= 0.02:
             result['left_02'] += 1
         if len(pair) > 1 and pair[1] <= 0.02:
@@ -719,13 +694,27 @@ def execute_single(name, mode, shrink, label_and_combine, metric_mode, avg_windo
             result['left_01'] += 1
         if len(pair) > 1 and pair[1] <= 0.01:
             result['right_01'] += 1
-    if show_info:
-        print(result)
-        print('\n\n')
-        print(final_target_pred)
+    print(result)
+    print('\n\n')
+    print(final_target_pred)
     validate_html += str(final_target_pred) + '<br\\>'
     if mode == MODE_FIND and ((pred_len < 7 and result['right_01'] >= pred_len) or ('qxc' in name and result['left_02'] >= 5 and result['right_01'] >= 4) or ('pls' in name and (result['left_02'] >= 7 and result['right_01'] >= 4 or result['left_02'] >= 6 and result['right_01'] >= 4 or result['left_02'] >= 5 and result['right_01'] >= 5))):
-        record = {'prob_cand_html' : prob_cand_html, 'validate_html' : validate_html, 'drop_rate' : dr, 'avg_window' : aw, 'data_len' : combine[0]}
+        record = {
+            'prob_cand_html' : prob_cand_html, 
+            'validate_html' : validate_html, 
+            'drop_rate' : dr, 
+            'avg_window' : aw, 
+            'data_len' : combine[0],
+            'smoothing_mode': smoothing_mode,
+            'ema_alpha': (
+                resolve_ema_alpha(
+                    avg_window,
+                    ema_alpha
+                )
+                if smoothing_mode != SMOOTH_SMA
+                else None
+            )
+        }
         record.update(result)
         fn = name + '/metric/detail_' + str(label_dim)
         if os.path.exists(fn + '.pkl'):
@@ -746,13 +735,9 @@ def execute_single(name, mode, shrink, label_and_combine, metric_mode, avg_windo
                             cmp_cnt += 1
                     if cmp_cnt >= 3 or (pattern_new == '5566' and pattern_old == '4477') or (pattern_new == '5555' and pattern_old == '4466') or (pattern_new == '6666' and pattern_old == '5577'):
                         exist[i] = record
-                        if secondary_data is not None:
-                            persist_obj(secondary_data, name + '/metric/secondary_data_' + str(label_dim) + '_' + str(record['data_len']))
                     break
             if not has:
                 exist.append(record)
-                if secondary_data is not None:
-                    persist_obj(secondary_data, name + '/metric/secondary_data_' + str(label_dim) + '_' + str(record['data_len']))
             persist_obj(exist, fn)
         else:
             persist_obj([record], fn)
@@ -774,8 +759,21 @@ if __name__ == '__main__':
     feature_mode='COMMON'
     DIMENSION=256
     pred_len = 7
-    #execute_single(name, mode, shrink, label_and_combine, metric_mode, avg_window, drop_rate, pred_len)
-    execute_secondary_global('qxc', ['20251228', '20251230'], None, ['20260531'], None, 0.1, int(label_and_combine[0]), 'CAT', 0.01)
+    smoothing_mode = (
+    args[8].upper()
+    if len(args) > 8
+        else SMOOTH_EMA_STATE
+    )
+    ema_alpha = None
+    if (
+        len(args) > 9
+        and args[9].lower() != 'auto'
+    ):
+        ema_alpha = float(
+            args[9]
+        )
+    execute_single(name, mode, shrink, label_and_combine, metric_mode, avg_window, drop_rate, pred_len, smoothing_mode=smoothing_mode, ema_alpha=ema_alpha)
+    #execute_secondary_global('qxc', ['20251228', '20251230'], None, ['20260630'], None, 0.1, int(label_and_combine[0]), 'CAT', 0.01)
     #execute_secondary_current(name, '20260501', 'CAT', 0.03)
 
 

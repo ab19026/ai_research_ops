@@ -1,18 +1,21 @@
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+    from statsmodels.tsa.stattools import adfuller
+    from statsmodels.stats.diagnostic import acorr_ljungbox as lb_test
+    import statsmodels.tsa.stattools as stattools
+    from statsmodels.tsa.arima.model import ARIMA
+    from statsmodels.tsa.statespace.sarimax import SARIMAX
+    from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+    from statsmodels.tsa.holtwinters import ExponentialSmoothing
+    import statsmodels.api as sm
+    import pywt
+except:
+    pass
 from pykalman import KalmanFilter, UnscentedKalmanFilter
-from statsmodels.tsa.stattools import adfuller
-from statsmodels.stats.diagnostic import acorr_ljungbox as lb_test
-import statsmodels.tsa.stattools as stattools
-from statsmodels.tsa.arima.model import ARIMA
-from statsmodels.tsa.statespace.sarimax import SARIMAX
-from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from scipy.signal import butter, lfilter
 from scipy.signal import savgol_filter
 # from darts.timeseries import TimeSeries
-import statsmodels.api as sm
 from scipy.interpolate import make_interp_spline
-import pywt
 from PyEMD import EMD, EEMD, CEEMDAN
 from vmdpy import VMD
 from PyLMD import LMD
