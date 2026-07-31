@@ -175,7 +175,10 @@ def generateProbRawByLabel(start, combine, name, label_pos_array):
 
 ''' RMEMBER!!! ODD X EVEN, NOT COMPATIABLE!!!!!!!! '''
 def loadProbRaw(start, combine, names, name, label_pos, time_window, avg_window, mode='ALL_LABEL', enrich=None, reverse=False, sample_mode='random', debug=True, shrink=True, label_pos_array=None, output_chunk_length=None, pred_len=7, smoothing_mode=SMOOTH_EMA_STATE, ema_alpha=None):
-    test_rate = 0.07
+    if int(label_pos) == 0:
+        test_rate = 0.02
+    else:
+        test_rate = 0.07
     smoothing_mode = (
         smoothing_mode.upper()
     )
