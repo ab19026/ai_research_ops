@@ -549,7 +549,7 @@ def model_train_and_predict(train=None, test=None, pred=None, target=True, debug
         validation_data=({'x': test['x']}, test['y']),
         batch_size=batch_size,
         callbacks=[model_checkpoint_callback],
-        epochs=200,
+        epochs=150,
         verbose=debug)
     # if debug and label_mode=='CAT':
     #     import matplotlib.pyplot as plt
