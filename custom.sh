@@ -20,15 +20,15 @@ do
         fi
         if [[ "$name" == qxc ]]; then
             # nohup bash run.sh 0 250,1500,5 latest $avg_window 0.08 "$name" 1 EMA_STATE 0.1 &
-            nohup bash run.sh 1 260,1500,5 latest $avg_window 0.03 "$name" 1 EMA_WINDOW 'auto' &
+            nohup bash run.sh 1 260,1500,5 latest $avg_window 0.03 "$name" 1 EMA_STATE 'auto' &
             # nohup bash run.sh 2 270,1500,5 latest $avg_window 0.08 "$name" 1 EMA_STATE 0.1 &
             nohup bash run.sh 3 280,1500,5 latest $avg_window 0.03 "$name" 1 EMA_STATE 0.1 &
-            nohup bash run.sh 4 290,1500,5 latest $avg_window 0.03 "$name" 1 EMA_WINDOW 'auto' &
+            nohup bash run.sh 4 290,1500,5 latest $avg_window 0.03 "$name" 1 EMA_STATE 'auto' &
             # nohup bash run.sh 5 240,1500,5 latest $avg_window 0.08 "$name" 1 EMA_WINDOW 'auto' &
-            nohup bash run.sh 6 230,1500,5 latest $avg_window 0.03 "$name" 1 EMA_WINDOW 'auto' &
-            nohup bash run.sh 1 270,1500,5 latest $avg_window 0.05 "$name" 1 EMA_WINDOW 'auto' &
+            nohup bash run.sh 6 230,1500,5 latest $avg_window 0.03 "$name" 1 EMA_STATE 'auto' &
+            nohup bash run.sh 1 270,1500,5 latest $avg_window 0.05 "$name" 1 EMA_STATE 'auto' &
             nohup bash run.sh 3 290,1500,5 latest $avg_window 0.05 "$name" 1 EMA_STATE 0.1 &
-            nohup bash run.sh 4 240,1500,5 latest $avg_window 0.05 "$name" 1 EMA_WINDOW 'auto' &
+            nohup bash run.sh 4 240,1500,5 latest $avg_window 0.05 "$name" 1 EMA_STATE 'auto' &
         elif [[ "$name" == qxc_full ]]; then
             nohup bash run.sh 0 245,1500,5 latest "$avg_window" 0.03 "$name" 0 &
             nohup bash run.sh 1 235,1500,5 latest "$avg_window" 0.03 "$name" 0 &
