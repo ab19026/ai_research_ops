@@ -7,8 +7,8 @@ do
     week=$(date +%u)
     if [ "$week" == 2 ] || [ "$week" == 5 ] || [ "$week" == 7 ]; then
         current_hour=$(date +"%H")
-        if [ "$current_hour" == 14 ]; then
-            mode=$(python get_latest.py $name)
+        if [ "$current_hour" == 22 ]; then
+            mode=$(python3.9 get_latest.py $name)
             if [ "$mode" == FIXED ] || [ "$mode" == FIND ]; then
                 ps -ef | grep "custom" | grep -v grep | awk '{print $2}' | xargs -r kill -9
                 ps -ef | grep "latest" | grep -v grep | awk '{print $2}' | xargs -r kill -9
