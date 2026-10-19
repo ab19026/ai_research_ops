@@ -21,6 +21,13 @@ def predict_full(name, target_label_dim, dt_cand, mode=None):
     invalid = False
     for dt in dt_cand:
         s, data = get_best_item(name, target_label_dim, True, dt)
+        # len_origin = len(data)
+        # len_good = len([v for v in data if v['left_02'] + v['left_01'] > 9])
+        # if len_good > 0:
+        #     data = [v for v in data if v['left_02'] + v['left_01'] > 9]
+        # else:
+        #     data = sorted(data, key = lambda x : x['left_02'] + x['left_01'], reverse = True)[:30]
+        data = sorted(data, key = lambda x : x['left_02'] + x['left_01'], reverse = True)[:100]
         result = set()
         result_copy = set()
         all_stat = {}
@@ -28,7 +35,7 @@ def predict_full(name, target_label_dim, dt_cand, mode=None):
         first = False
         first_copy = False
         for v in data:
-            arr, arr_copy, need_update = pattern_check(name, v['prob_cand_arr'], v['pred'], target_label_dim, v['avg_window'], v['data_len'], v['best'], true_label_map[dt] if dt in true_label_map else None, mode, range_stat, config, config_copy)
+            arr, arr_copy, need_update = pattern_check(name, v['prob_cand_arr'], v['pred'], target_label_dim, v['avg_window'], v['data_len'], v['best'], true_label_map[dt] if dt in true_label_map else None, mode, range_stat, config, config_copy, dt)
             if need_update:
                 update_config = True
             if not first_copy:

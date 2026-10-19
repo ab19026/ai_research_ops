@@ -1,7 +1,7 @@
 from rule_kit import *
 import os
 
-def process(count, maxConsecutiveCount, seq, nearGapStat, gapStat, prob_cand_arr, pred, avg_window, data_len, good_count, range_stat, name, label, label_dim, config, config_copy):
+def process(count, maxConsecutiveCount, seq, nearGapStat, gapStat, prob_cand_arr, pred, avg_window, data_len, good_count, range_stat, name, label, label_dim, config, config_copy, dt, debug=False):
     big_tmp = pattern_sort(prob_cand_arr, pred, seq['big'], False, 0)
     big_gap_tmp = [prob_cand_arr[v] - pred for v in big_tmp]
     small_tmp = pattern_sort(prob_cand_arr, pred, seq['small'], False, 0)
@@ -17,7 +17,6 @@ def process(count, maxConsecutiveCount, seq, nearGapStat, gapStat, prob_cand_arr
     if count['big'] >= 7 * (1.0 if label_dim < 6 else 1.5):
         strategy_name = '大的全都要'
         strategy_print = strategy_name
-        print('大的全都要')
     elif count['near'] >= 5 * (1.0 if label_dim < 6 else 1.5) and maxConsecutiveCount['near'] < 4 * (1.0 if label_dim < 6 else 1.5):
         if len(seq['small']) + len(seq['smallNear']) >= 7 * (1.0 if label_dim < 6 else 1.5):
             strategy_name = '参差不齐接近时小的偏多'
@@ -98,12 +97,19 @@ def process(count, maxConsecutiveCount, seq, nearGapStat, gapStat, prob_cand_arr
             arr_copy,
             name,
             label,
-            label_dim):
+            label_dim,
+            data_len,
+            avg_window,
+            dt,
+            debug):
         update = True
-        print('需要更新')
-    print(strategy_print)
-    print(data_len, good_count, arr_copy, arr)
+        if debug:
+            print('需要更新')
+            print(strategy_print)
+            print(data_len, good_count, arr_copy, arr)
+            print({k : sort_show([str(bi) + ':' + "{:.4f}".format(prob_cand_arr[bi] - pred) for bi in seq[k]]) for k in seq})
+            print(gapStat, nearGapStat)
+            print("\n")
     del(seq['near'])
     show(gapStat, avg_window, data_len, range_stat, prob_cand_arr, pred, seq)
-    print("\n")
     return arr, arr_copy, update

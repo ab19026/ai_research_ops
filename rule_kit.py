@@ -97,8 +97,6 @@ def findTurn(arr, tmp, tmp_gap, approach_threshold=0.0001, gap_threshold=0.2, re
 
 
 def midJudge(tmp, gapStat, kind, over=True):
-    if len(tmp) < 3:
-        return False
     if gapStat[kind] == int(len(tmp) / 2) and len(tmp) % 2 == 0:
         return True
     if over:
@@ -145,7 +143,7 @@ def show(gapStat, avg_window, data_len, range_stat, prob_cand_arr, pred, seq):
     for k in s:
         if len(s[k]) > 1 and s[k][0].split(':')[1] == s[k][-1].split(':')[1]:
             s[k] = str(s[k]).replace('[', '【').replace(']', '】')
-    print(avg_window, data_len, s, gapStat)
+    #print(avg_window, data_len, s, gapStat)
 
 
 def extraSmall(seq, ratio=None):
@@ -213,8 +211,27 @@ def fmt(val):
     neg_or_pos = 1 if val >= 0 else -1
     return neg_or_pos * float(str(val).replace('-', '')[:4]) if 'e' not in str(val) else 0.0
 
-def edge(v):
-    return v is not None and (int(str(abs(v))[4]) >= jump_big or int(str(abs(v))[4]) <= jump_small)
+def edge_gt(v):
+    if v is None:
+        return False
+    if abs(v) >= 0.01 and abs(v) < 0.015:
+        jump_big = 3
+    elif abs(v) >= 0.015 and abs(v) < 0.02:
+        jump_big = 8
+    else:
+        jump_big = 6
+    return int(str(abs(v))[4]) >= jump_big
+
+def edge_lt(v):
+    if v is None:
+        return False
+    if abs(v) >= 0.01 and abs(v) < 0.015:
+        jump_small = 2
+    elif abs(v) >= 0.015 and abs(v) < 0.02:
+        jump_small = 6
+    else:
+        jump_small = 2
+    return int(str(abs(v))[4]) <= jump_small
 
 def edge_single(v):
     return -1 if v is None else int(str(abs(v))[4])
@@ -222,28 +239,9 @@ def edge_single(v):
 def edge_more(v):
     return -1 if v is None else int(str(abs(v))[4:8])
 
-def cut_by_boundary(seq, seq_gap, gap_val):
-    pos_boundary_left = -1
-    pos_boundary_right = -1
-    big = max(seq_gap) >= 0.015
-    small = min(seq_gap) <= -0.015
-    eps = 0.0
-    if big:
-        eps = 0.0001
-    elif small:
-        eps = -0.0001
-    for i in range(len(seq)):
-        if fmt(seq_gap[i] + eps) == gap_val:
-            if pos_boundary_left == -1:
-                pos_boundary_left = i
-        if pos_boundary_left > -1 and pos_boundary_right == -1 and fmt(seq_gap[i] + eps) != gap_val:
-            pos_boundary_right = i
-    if pos_boundary_left == -1:
-        pos_boundary_left = 0
-    if pos_boundary_right == -1:
-        pos_boundary_right = len(seq)
-    return seq[pos_boundary_left:pos_boundary_right], seq_gap[pos_boundary_left:pos_boundary_right]
-
+def refine_rst_gap_stat_val(rst, val):
+    if val is not None and abs(val) < 0.01:
+        rst['gap_stat_val'] = '+0' if val >= 0 else '-0'
 
 # seq_gap = [-0.0134,-0.0127,-0.0109,-0.0089,-0.0078,-0.0065,-0.0055,-0.0024]
 # label = 4
@@ -261,13 +259,13 @@ def cut_by_boundary(seq, seq_gap, gap_val):
 # }
 # seq = [i for i in range(len(seq_gap))]
 
-grow_big = 0.0015
-grow_small = 0.00015
-jump_big = 6
-jump_small = 2
+grow_big = 0.0025
+grow_small = 0.00025
 
-
+# only for SINGLE and PAIR
 def seq_merge(seq, seq_gap, label, flag):
+    current_consecutive = False
+    non_current_consecutive = False
     pos_single = None
     fv_dict = {}
     seq_gap_single = []
@@ -281,13 +279,21 @@ def seq_merge(seq, seq_gap, label, flag):
         if label is not None and int(label) in fv_dict[seq_gap_single[i]]:
             pos_single = i
             break
-    if len(seq_gap_single) == 2 and pos_single == 1:
-        pos_single = -1
-    return fv_dict, seq_gap_single, pos_single
+    if len(seq_gap_single) == 2 and pos_single is not None:
+        if pos_single == 1:
+            pos_single = -1
+        if len(fv_dict[seq_gap_single[pos_single]]) > 1:
+            current_consecutive = True
+        if len(fv_dict[seq_gap_single[1 + pos_single]]) > 1:
+            non_current_consecutive = True
+    if len(seq_gap_single) == 1 and pos_single is not None:
+        if len(fv_dict[seq_gap_single[pos_single]]) > 1:
+            current_consecutive = True
+    return fv_dict, seq_gap_single, pos_single, current_consecutive, non_current_consecutive
 
 
-def train(seq, seq_gap, gap_stat, label, debug=True):
-    fv_dict, seq_gap_single, pos_single = seq_merge(seq, seq_gap, label, 'train')
+def train(seq, seq_gap, gap_stat, label, data_len, avg_window, dt, debug=True):
+    fv_dict, seq_gap_single, pos_single, current_consecutive, non_current_consecutive = seq_merge(seq, seq_gap, label, 'train')
     if debug:
         print('开始train')
     label = int(label)
@@ -305,15 +311,8 @@ def train(seq, seq_gap, gap_stat, label, debug=True):
         eps = -0.0001
     left_gap_val = None
     right_gap_val = None
-    left_turn_val = None
-    right_turn_val = None
     ref_left_gap_val = None
     ref_right_gap_val = None
-    turn = False
-    # if seq_gap[0] == seq_gap[-1] and len(seq) > 1:
-    #     if debug:
-    #         print('ALL吗')
-    #     return 'ALL', {'all' : True}
     if len(seq_gap_single) == 1:
         if debug:
             print('SINGLE吗')
@@ -321,33 +320,51 @@ def train(seq, seq_gap, gap_stat, label, debug=True):
             'gap_stat_val' : fmt(seq_gap[pos]), 
             'single_val' :  seq_gap[pos] + ((grow_big if fmt(seq_gap[pos]) != 0 else grow_small) if big or bigNear else (-grow_big if fmt(seq_gap[pos]) != 0 else -grow_small)), 
             'single_opt' : ('<' if bigNear or big else '>'),
-            'consecutive' : False
+            'consecutive' : current_consecutive
         }
     if len(seq_gap_single) == 2:
         if debug:
             print('PAIR吗', pos_single, seq)
         if fmt(seq_gap[0] + eps) != fmt(seq_gap[-1] + eps):
+            gap_stat_val = fmt(seq_gap[-1] + eps) if big or bigNear else fmt(seq_gap[0] + eps)
+            if gap_stat_val == 0:
+                gap_stat_val = '+0' if (big or bigNear) else '-0'
             return 'PAIR', {
-                'gap_stat_val' : fmt(seq_gap[-1] + eps) if big or bigNear else fmt(seq_gap[0] + eps), 
+                'gap_stat_val' : gap_stat_val, 
                 'pos' : pos_single,
-                'current_consecutive' : False,
-                'non_current_consecutive' : False
+                'current_consecutive' : current_consecutive,
+                'non_current_consecutive' : non_current_consecutive,
+                'mid_judge_over' : gap_stat[gap_stat_val] >= len(seq) / 2.0
             }
         else:
+            gap_stat_val = fmt(seq_gap[0] + eps)
+            if gap_stat_val == 0:
+                gap_stat_val = '+0' if (big or bigNear) else '-0'
             return 'PAIR', {
-                'gap_stat_val' : fmt(seq_gap[0] + eps), 
+                'gap_stat_val' : gap_stat_val, 
                 'left_val' : seq_gap[0] + (grow_big if fmt(seq_gap[0]) != 0 else grow_small),
                 'right_val' : seq_gap[-1] - (grow_big if fmt(seq_gap[-1]) != 0 else grow_small),
                 'pos' : pos_single,
-                'left_consecutive' : False,
-                'right_consecutive' : False
+                'current_consecutive' : current_consecutive,
+                'non_current_consecutive' : non_current_consecutive
             }
+    left_current_consecutive = False
+    left_non_current_consecutive = False
+    right_current_consecutive = False
+    right_non_current_consecutive = False
     if pos - 1 > -1:
         no_gap = False
+        for i in range(pos + 1, len(seq)):
+            if abs(seq_gap[i] - seq_gap[pos]) < 0.0000001:
+                left_current_consecutive = True
         for i in range(pos - 1, -1, -1):
             if abs(seq_gap[i] - seq_gap[pos]) < 0.0000001:
-                turn = True
+                left_current_consecutive = True
             elif fmt(seq_gap[i] + eps) != fmt(seq_gap[pos] + eps) and (not no_gap):
+                for ii in range(i - 1, -1, -1):
+                    if abs(seq_gap[ii] - seq_gap[i]) < 0.0000001:
+                        left_non_current_consecutive = True
+                        break
                 left_gap_val = seq_gap[i] + eps
                 if small:
                     ref_left_gap_val = float(fmt(seq_gap[i] + eps))
@@ -360,178 +377,136 @@ def train(seq, seq_gap, gap_stat, label, debug=True):
                     return 'GAP', {
                         'gap_stat_val' : gap_val,
                         'mid_judge_over' : gap_stat[gap_val] >= len(seq) / 2,
-                        'gap_and_consecutive' : {'pos' : 'gap_stat[' + str(gap_val) + ']' if smallNear else 'len(seq) - gap_stat[' + str(gap_val) + ']', 'left' : False}
+                        'gap_and_consecutive' : {'pos' : 'gap_stat[' + str(gap_val) + ']' if smallNear else 'len(seq) - gap_stat[' + str(gap_val) + ']', 'left' : False},
+                        'current_consecutive' : left_current_consecutive,
+                        'non_current_consecutive' : left_non_current_consecutive
                     }
                 break
             else:
-                if left_turn_val is None:
-                    left_turn_val = seq_gap[i]
                 no_gap = True
                 break
     if pos + 1 < len(seq):
         no_gap = False
+        for i in range(pos - 1, -1, -1):
+            if abs(seq_gap[i] - seq_gap[pos]) < 0.0000001:
+                right_current_consecutive = True
         for i in range(pos + 1, len(seq)):
             if abs(seq_gap[i] - seq_gap[pos]) < 0.0000001:
-                turn = True
+                 right_current_consecutive = True
             elif fmt(seq_gap[i] + eps) != fmt(seq_gap[pos] + eps) and (not no_gap):
+                for ii in range(i + 1, len(seq)):
+                    if abs(seq_gap[ii] - seq_gap[i]) < 0.0000001:
+                        right_non_current_consecutive = True
+                        break
                 right_gap_val = seq_gap[i] + eps
                 if small:
                     ref_right_gap_val = float(fmt(seq_gap[pos] + eps))
                 elif big:
                     ref_right_gap_val = float(fmt(seq_gap[i] + eps))
                 else:
-                    gap_val =  -0.01 if smallNear else 0.01
+                    gap_val = -0.01 if smallNear else 0.01
                     if debug:
                         print('NEAR GAP RIGHT')
                     return 'GAP', {
                         'gap_stat_val' : gap_val,
                         'mid_judge_over' : gap_stat[gap_val] >= len(seq) / 2,
-                        'gap_and_consecutive' : {'pos' : 'gap_stat[' + str(gap_val) + '] - 1' if smallNear else 'len(seq) - gap_stat[' + str(gap_val) + '] - 1', 'left' : True}
+                        'gap_and_consecutive' : {'pos' : 'gap_stat[' + str(gap_val) + '] - 1' if smallNear else 'len(seq) - gap_stat[' + str(gap_val) + '] - 1', 'left' : True},
+                        'current_consecutive' : right_current_consecutive,
+                        'non_current_consecutive' : right_non_current_consecutive
                     }
                 break
             else:
-                if right_turn_val is None:
-                    right_turn_val = seq_gap[i]
                 no_gap = True
                 break
-    if not turn:
-        right_turn_val = None
-        left_turn_val = None
     rst = {
-            'gap_stat_val' : None,
-            'mid_judge_over' : None,
-            'gap_and_consecutive' : None
-        }
+        'gap_stat_val' : None,
+        'mid_judge_over' : None,
+        'gap_and_consecutive' : None
+    }
     if left_gap_val is not None or right_gap_val is not None:
-        if edge(left_gap_val) and edge(right_gap_val):
-            if edge_single(left_gap_val) >= jump_big and edge_more(left_gap_val) >= edge_more(right_gap_val) or edge_single(left_gap_val) <= jump_small and edge_more(left_gap_val) <= edge_more(right_gap_val):
+        if (edge_gt(left_gap_val) or edge_lt(left_gap_val)) and (edge_gt(right_gap_val) or edge_lt(right_gap_val)):
+            if edge_gt(left_gap_val) and edge_more(left_gap_val) >= edge_more(right_gap_val) or edge_lt(left_gap_val) and edge_more(left_gap_val) <= edge_more(right_gap_val):
+                rst['current_consecutive'] = left_current_consecutive
+                rst['non_current_consecutive'] = left_non_current_consecutive
                 rst['gap_stat_val'] = ref_left_gap_val
                 rst['gap_and_consecutive'] = {'pos' : 'gap_stat[' + str(rst['gap_stat_val']) + ']' if small else 'len(seq)-gap_stat[' + str(rst['gap_stat_val']) + ']', 'left' : False}
             else:
+                rst['current_consecutive'] = right_current_consecutive
+                rst['non_current_consecutive'] = right_non_current_consecutive
                 rst['gap_stat_val'] = ref_right_gap_val
                 rst['gap_and_consecutive'] = {'pos' : 'len(seq)-gap_stat[' + str(rst['gap_stat_val']) + '] - 1' if big else 'gap_stat[' + str(rst['gap_stat_val']) + '] - 1', 'left' : True}
-        elif edge(left_gap_val):
+        elif edge_gt(left_gap_val) or edge_lt(left_gap_val):
+            rst['current_consecutive'] = left_current_consecutive
+            rst['non_current_consecutive'] = left_non_current_consecutive
             rst['gap_stat_val'] = ref_left_gap_val
             rst['gap_and_consecutive'] = {'pos' : 'gap_stat[' + str(rst['gap_stat_val']) + ']' if small else 'len(seq)-gap_stat[' + str(rst['gap_stat_val']) + ']', 'left' : False}
-        elif edge(right_gap_val):
+        elif edge_gt(right_gap_val) or edge_lt(right_gap_val):
+            rst['current_consecutive'] = right_current_consecutive
+            rst['non_current_consecutive'] = right_non_current_consecutive
             rst['gap_stat_val'] = ref_right_gap_val
             rst['gap_and_consecutive'] = {'pos' : 'len(seq)-gap_stat[' + str(rst['gap_stat_val']) + '] - 1' if big else 'gap_stat[' + str(rst['gap_stat_val']) + '] - 1', 'left' : True}
         elif right_gap_val is None:
+            rst['current_consecutive'] = left_current_consecutive
+            rst['non_current_consecutive'] = left_non_current_consecutive
             rst['gap_stat_val'] = ref_left_gap_val
             rst['gap_and_consecutive'] = {'pos' : 'gap_stat[' + str(rst['gap_stat_val']) + ']' if small else 'len(seq)-gap_stat[' + str(rst['gap_stat_val']) + ']', 'left' : False}
         elif left_gap_val is None:
+            rst['current_consecutive'] = right_current_consecutive
+            rst['non_current_consecutive'] = right_non_current_consecutive
             rst['gap_stat_val'] = ref_right_gap_val
             rst['gap_and_consecutive'] = {'pos' : 'len(seq)-gap_stat[' + str(rst['gap_stat_val']) + '] - 1' if big else 'gap_stat[' + str(rst['gap_stat_val']) + '] - 1', 'left' : True}
         elif abs(left_gap_val - seq_gap[pos]) >= abs(right_gap_val - seq_gap[pos]):
+            rst['current_consecutive'] = left_current_consecutive
+            rst['non_current_consecutive'] = left_non_current_consecutive
             rst['gap_stat_val'] = ref_left_gap_val
             rst['gap_and_consecutive'] = {'pos' : 'gap_stat[' + str(rst['gap_stat_val']) + ']' if small else 'len(seq)-gap_stat[' + str(rst['gap_stat_val']) + ']', 'left' : False}
         else:
+            rst['current_consecutive'] = right_current_consecutive
+            rst['non_current_consecutive'] = right_non_current_consecutive
             rst['gap_stat_val'] = ref_right_gap_val
             rst['gap_and_consecutive'] = {'pos' : 'len(seq)-gap_stat[' + str(rst['gap_stat_val']) + '] - 1' if big else 'gap_stat[' + str(rst['gap_stat_val']) + '] - 1', 'left' : True}
-        rst['mid_judge_over'] = gap_stat[rst['gap_stat_val']] >= len(seq) / 2
+        rst['mid_judge_over'] = gap_stat[rst['gap_stat_val']] >= len(seq) / 2.0
+        if gap_stat[rst['gap_stat_val']] == len(seq):
+            raise RuntimeError('gap_stat_val is invalid, gap_stat_val: {}, gap_stat: {}, seq: {}'.format(rst['gap_stat_val'], gap_stat, seq))
         if debug:
             print('GAP吗')
         return 'GAP', rst
-    # rst = {
-    #     'gap_stat_val' : float(fmt(seq_gap[pos])),
-    #     'find_turn' : None
-    # }
-    # new_seq, new_seq_gap = cut_by_boundary(seq, seq_gap, rst['gap_stat_val'])
-    # if left_turn_val is not None or right_turn_val is not None:
-    #     if edge(left_turn_val) and edge(right_turn_val):
-    #         if edge_single(left_gap_val) >= jump_big and edge_more(left_gap_val) >= edge_more(right_gap_val) or edge_single(left_gap_val) <= jump_small and edge_more(left_gap_val) <= edge_more(right_gap_val):
-    #             rst['find_turn'] = {'consecutive_at_left' : False, 'choose_single' : False}
-    #         else:
-    #             rst['find_turn'] = {'consecutive_at_left' : True, 'choose_single' : False}
-    #     elif edge(left_turn_val):
-    #         rst['find_turn'] = {'consecutive_at_left' : False, 'choose_single' : False}
-    #     elif edge(right_turn_val):
-    #         rst['find_turn'] = {'consecutive_at_left' : True, 'choose_single' : False}
-    #     elif right_turn_val is None:
-    #         rst['find_turn'] = {'consecutive_at_left' : False, 'choose_single' : False}
-    #     elif left_turn_val is None:
-    #         rst['find_turn'] = {'consecutive_at_left' : True, 'choose_single' : False}
-    #     elif abs(left_turn_val - seq_gap[pos]) >= abs(right_turn_val - seq_gap[pos]):
-    #         rst['find_turn'] = {'consecutive_at_left' : False, 'choose_single' : False}
-    #     else:
-    #         rst['find_turn'] = {'consecutive_at_left' : True, 'choose_single' : False}
-    #     if debug:
-    #         print('第一次TURN吗', rst)
-    #     rst['find_turn']['reverse'] = (new_seq.index(label) + 1) * 1.0 / len(new_seq) > 0.5
-    #     return 'TURN', rst
-    # edge_label_left = None
-    # edge_label_right = None
-    # edge_label = None
-    # if pos - 1 > -1 and pos - 2 > -1:
-    #     if abs(seq_gap[pos - 1] - seq_gap[pos - 2]) < 0.0000001:
-    #         left_turn_val = seq_gap[pos - 1]
-    #         for z in range(pos - 2, -1, -1):
-    #             if abs(seq_gap[pos - 1] - seq_gap[z]) < 0.0000001:
-    #                 edge_label_left = seq[z]
-    # if pos + 1 < len(seq) and pos + 2 < len(seq):
-    #     if abs(seq_gap[pos + 1] - seq_gap[pos + 2]) < 0.0000001:
-    #         right_turn_val = seq_gap[pos + 1]
-    #         for z in range(pos + 2, len(seq)):
-    #             if abs(seq_gap[z] - seq_gap[pos + 1]) < 0.0000001:
-    #                 edge_label_right = seq[z]
-    # if left_turn_val is not None or right_turn_val is not None:
-    #     if edge(left_turn_val) and edge(right_turn_val):
-    #         if edge_single(left_gap_val) >= jump_big and edge_more(left_gap_val) >= edge_more(right_gap_val) or edge_single(left_gap_val) <= jump_small and edge_more(left_gap_val) <= edge_more(right_gap_val):
-    #             rst['find_turn'] = {'consecutive_at_left' : True, 'choose_single' : True}
-    #             edge_label = edge_label_left
-    #         else:
-    #             rst['find_turn'] = {'consecutive_at_left' : False, 'choose_single' : True}
-    #             edge_label = edge_label_right
-    #     elif edge(left_turn_val):
-    #         rst['find_turn'] = {'consecutive_at_left' : True, 'choose_single' : True}
-    #         edge_label = edge_label_left
-    #     elif edge(right_turn_val):
-    #         rst['find_turn'] = {'consecutive_at_left' : False, 'choose_single' : True}
-    #         edge_label = edge_label_right
-    #     elif right_turn_val is None:
-    #         rst['find_turn'] = {'consecutive_at_left' : True, 'choose_single' : True}
-    #         edge_label = edge_label_left
-    #     elif left_turn_val is None:
-    #         rst['find_turn'] = {'consecutive_at_left' : False, 'choose_single' : True}
-    #         edge_label = edge_label_right
-    #     elif abs(left_turn_val - seq_gap[pos]) >= abs(right_turn_val - seq_gap[pos]):
-    #         rst['find_turn'] = {'consecutive_at_left' : True, 'choose_single' : True}
-    #         edge_label = edge_label_left
-    #     else:
-    #         rst['find_turn'] = {'consecutive_at_left' : False, 'choose_single' : True}
-    #         edge_label = edge_label_right
-    #     if debug:
-    #         print('第二次TURN吗', left_turn_val, right_turn_val, new_seq.index(edge_label), len(new_seq))
-    #     rst['find_turn']['reverse'] = (new_seq.index(label)) * 1.0 / len(new_seq) > 0.5
-    #     return 'TURN', rst
     rst = {
         'gap_stat_val' : None,
         'skip_pos' : None,
         'shift' : None,
         'skip_val' : None,
         'mid_judge_over' : None,
-        'pos_1_consecutive' : False,
-        'pos_2_consecutive' : False
+        'value_consecutive' : False,
+        'pos_1_consecutive' : False
     }
     pos_1 = None
     pos_2 = None
+    pos_1_consecutive = False
+    value_consecutive = False
     for i in range(pos - 1, -1, -1):
         if abs(seq_gap[i] - seq_gap[pos]) < 0.0000001:
-            pass
+            value_consecutive = True
         elif fmt(seq_gap[i] + eps) == fmt(seq_gap[pos] + eps):
             pos_1 = i
             break
+    for i in range(pos + 1, len(seq)):
+        if abs(seq_gap[i] - seq_gap[pos]) < 0.0000001:
+             value_consecutive = True
+             break
     if pos_1 is not None:
         for i in range(pos_1 -1, -1, -1):
             if abs(seq_gap[i] - seq_gap[pos_1]) < 0.0000001:
-                pass
+                pos_1_consecutive = True
             elif fmt(seq_gap[i] + eps) == fmt(seq_gap[pos_1] + eps):
                 break
             elif fmt(seq_gap[i] + eps) != fmt(seq_gap[pos_1] + eps):
                 pos_2 = i
                 break
     if pos_1 is not None and pos_2 is not None:
-        if edge_single(seq_gap[pos_1] + eps) >= jump_big or edge_single(seq_gap[pos_1] + eps) <= jump_small:
+        if edge_gt(seq_gap[pos_1] + eps) or edge_lt(seq_gap[pos_1] + eps):
+            rst['pos_1_consecutive'] = pos_1_consecutive
+            rst['value_consecutive'] = value_consecutive
             rst['shift'] = 1
             rst['skip_val'] = seq_gap[pos_1]
             rst['opt'] = '<'
@@ -544,40 +519,36 @@ def train(seq, seq_gap, gap_stat, label, debug=True):
                 rst['gap_stat_val'] = fmt(seq_gap[pos_1] + eps)
                 rst['skip_pos'] = 'len(seq)-gap_stat[' + str(rst['gap_stat_val']) + ']'
             rst['mid_judge_over'] = gap_stat[rst['gap_stat_val']] * 1.0 / len(seq) >= 0.5
-    # if pos - 2 > -1 and fmt(seq_gap[pos - 2] + eps) != fmt(seq_gap[pos] + eps):
-    #     if edge_single(seq_gap[pos - 1] + eps) >= jump_big or edge_single(seq_gap[pos - 1] + eps) <= jump_small:
-    #         rst['shift'] = 1
-    #         rst['skip_val'] = seq_gap[pos - 1]
-    #         rst['opt'] = '<'
-    #         # >= jump_big
-    #         if small or smallNear:
-    #             rst['gap_stat_val'] = fmt(seq_gap[pos - 2] + eps)
-    #             rst['skip_pos'] = 'gap_stat[' + str(rst['gap_stat_val']) + ']'
-    #         # <= jump_small
-    #         elif big or bigNear:
-    #             rst['gap_stat_val'] = fmt(seq_gap[pos - 1] + eps)
-    #             rst['skip_pos'] = 'len(seq)-gap_stat[' + str(rst['gap_stat_val']) + ']'
-    #         rst['mid_judge_over'] = gap_stat[rst['gap_stat_val']] * 1.0 / len(seq) >= 0.5
+            if gap_stat[rst['gap_stat_val']] == len(seq):
+                raise RuntimeError('gap_stat_val is invalid, gap_stat_val: {}, gap_stat: {}, seq: {}'.format(rst['gap_stat_val'], gap_stat, seq))
     pos_1 = None
     pos_2 = None
+    pos_1_consecutive = False
+    value_consecutive = False
     for i in range(pos + 1, len(seq)):
         if abs(seq_gap[i] - seq_gap[pos]) < 0.0000001:
-            pass
+           value_consecutive = True
         elif fmt(seq_gap[i] + eps) == fmt(seq_gap[pos] + eps):
             pos_1 = i
+            break
+    for i in range(pos - 1, -1, -1):
+        if abs(seq_gap[i] - seq_gap[pos]) < 0.0000001:
+            value_consecutive = True
             break
     if pos_1 is not None:
         for i in range(pos_1 + 1, len(seq)):
             if abs(seq_gap[i] - seq_gap[pos_1]) < 0.0000001:
-                pass
+                pos_1_consecutive = True
             elif fmt(seq_gap[i] + eps) == fmt(seq_gap[pos_1] + eps):
                 break
             elif fmt(seq_gap[i] + eps) != fmt(seq_gap[pos_1] + eps):
                 pos_2 = i
                 break
     if pos_1 is not None and pos_2 is not None:
-        if edge_single(seq_gap[pos_1] + eps) >= jump_big or edge_single(seq_gap[pos_1] + eps) <= jump_small:
-            if rst['gap_stat_val'] is None or edge_single(seq_gap[pos_1]) >= jump_big and edge_single(rst['skip_val']) >= jump_big and edge_more(seq_gap[pos_1]) >= edge_more(rst['skip_val']) or edge_single(seq_gap[pos_1]) <= jump_small and edge_single(rst['skip_val']) <= jump_small and edge_more(seq_gap[pos_1]) <= edge_more(rst['skip_val']):
+        if edge_gt(seq_gap[pos_1] + eps) or edge_lt(seq_gap[pos_1] + eps):
+            if rst['gap_stat_val'] is None or edge_gt(seq_gap[pos_1]) and edge_gt(rst['skip_val']) and edge_more(seq_gap[pos_1]) >= edge_more(rst['skip_val']) or edge_lt(seq_gap[pos_1]) and edge_lt(rst['skip_val']) and edge_more(seq_gap[pos_1]) <= edge_more(rst['skip_val']):
+                rst['pos_1_consecutive'] = pos_1_consecutive
+                rst['value_consecutive'] = value_consecutive
                 rst['shift'] = -1
                 rst['skip_val'] = seq_gap[pos_1]
                 rst['opt'] = '>'
@@ -590,21 +561,8 @@ def train(seq, seq_gap, gap_stat, label, debug=True):
                     rst['gap_stat_val'] = fmt(seq_gap[pos_2] + eps)
                     rst['skip_pos'] = 'len(seq)-gap_stat[' + str(rst['gap_stat_val']) + '] - 1'
                 rst['mid_judge_over'] = gap_stat[rst['gap_stat_val']] * 1.0 / len(seq) >= 0.5
-    # if pos + 2 < len(seq) and fmt(seq_gap[pos + 2] + eps) != fmt(seq_gap[pos] + eps):
-    #     if edge_single(seq_gap[pos + 1] + eps) >= jump_big or edge_single(seq_gap[pos + 1] + eps) <= jump_small:
-    #         if rst['gap_stat_val'] is None or edge_single(seq_gap[pos + 1]) >= jump_big and edge_single(rst['skip_val']) >= jump_big and edge_more(seq_gap[pos + 1]) >= edge_more(rst['skip_val']) or edge_single(seq_gap[pos + 1]) <= jump_small and edge_single(rst['skip_val']) <= jump_small and edge_more(seq_gap[pos + 1]) <= edge_more(rst['skip_val']):
-    #             rst['shift'] = -1
-    #             rst['skip_val'] = seq_gap[pos + 1]
-    #             rst['opt'] = '>'
-    #             # <= jump_small
-    #             if small or smallNear:
-    #                 rst['gap_stat_val'] = fmt(seq_gap[pos + 1] + eps)
-    #                 rst['skip_pos'] = 'gap_stat[' + str(rst['gap_stat_val']) + '] - 1'
-    #             # >= jump_big
-    #             elif big or bigNear:
-    #                 rst['gap_stat_val'] = fmt(seq_gap[pos + 2] + eps)
-    #                 rst['skip_pos'] = 'len(seq)-gap_stat[' + str(rst['gap_stat_val']) + '] - 1'
-    #             rst['mid_judge_over'] = gap_stat[rst['gap_stat_val']] * 1.0 / len(seq) >= 0.5
+                if gap_stat[rst['gap_stat_val']] == len(seq):
+                    raise RuntimeError('gap_stat_val is invalid, gap_stat_val: {}, gap_stat: {}, seq: {}'.format(rst['gap_stat_val'], gap_stat, seq))
     if rst['gap_stat_val'] is not None:
         if rst['opt'] == '<':
             rst['skip_val'] = rst['skip_val'] + (grow_small if fmt(rst['skip_val']) == 0 else grow_big)
@@ -620,6 +578,7 @@ def train(seq, seq_gap, gap_stat, label, debug=True):
         'end_point_consecutive' : False,
         'non_end_point_consecutive' : False
     }
+    refine_rst_gap_stat_val(rst, seq_gap[pos])
     if pos_single == 0:
         rst['end_point'] = {'opt' : '<', 'val' : seq_gap[pos] + (grow_small if fmt(seq_gap[pos]) == 0 else grow_big), 'pos' : 0}
         if big or bigNear:
@@ -629,18 +588,13 @@ def train(seq, seq_gap, gap_stat, label, debug=True):
                     rst['mid_judge_over'] = gap_stat[rst['gap_stat_val']] * 1.0 / len(seq) >= 0.5
                     break
         elif small or smallNear:
-            rst['gap_stat_val'] = fmt(seq_gap[0])
-            if rst['gap_stat_val'] != 0 and gap_stat[rst['gap_stat_val']] < len(seq):
-                if fmt(seq_gap[0] + eps) != fmt(seq_gap[-1] + eps):
-                    rst['mid_judge_over'] = gap_stat[rst['gap_stat_val']] * 1.0 / len(seq) >= 0.5 and gap_stat[rst['gap_stat_val']] < len(seq)
+            if rst['gap_stat_val'] != 0 and gap_stat[rst['gap_stat_val']] < len(seq) and fmt(seq_gap[0] + eps) != fmt(seq_gap[-1] + eps):
+                    rst['mid_judge_over'] = gap_stat[rst['gap_stat_val']] * 1.0 / len(seq) >= 0.5
     elif pos_single == len(seq_gap_single) - 1:
         rst['end_point'] = {'opt' : '>', 'val' : seq_gap[pos] - (grow_small if fmt(seq_gap[pos]) == 0 else grow_big), 'pos' : -1}
         if big or bigNear:
-            rst['gap_stat_val'] = fmt(seq_gap[-1])
-            print('看一看', seq, seq_gap, pos, big, small, bigNear, smallNear, gap_stat)
-            if rst['gap_stat_val'] != 0 and gap_stat[rst['gap_stat_val']] < len(seq):
-                if fmt(seq_gap[0] + eps) != fmt(seq_gap[-1] + eps):
-                    rst['mid_judge_over'] = gap_stat[rst['gap_stat_val']] * 1.0 / len(seq) >= 0.5 and gap_stat[rst['gap_stat_val']] < len(seq)
+            if rst['gap_stat_val'] != 0 and gap_stat[rst['gap_stat_val']] < len(seq) and fmt(seq_gap[0] + eps) != fmt(seq_gap[-1] + eps):
+                    rst['mid_judge_over'] = gap_stat[rst['gap_stat_val']] * 1.0 / len(seq) >= 0.5
         elif small or smallNear:
             for j in range(pos - 1, -1, -1):
                 if fmt(seq_gap[j] + eps) != fmt(seq_gap[-1] + eps):
@@ -654,10 +608,12 @@ def train(seq, seq_gap, gap_stat, label, debug=True):
     rst = {
         'gap_stat_val' : fmt(seq_gap[pos]),
         'mid_judge_over' : 'equal',
+        'gap' : 0,
         'left_consecutive' : False,
         'right_consecutive' : False,
         'this_consecutive' : False
     }
+    refine_rst_gap_stat_val(rst, seq_gap[pos])
     if debug:
         print('BETWEEN吗')
     for i in range(pos - 1, -1, -1):
@@ -673,39 +629,26 @@ def train(seq, seq_gap, gap_stat, label, debug=True):
             rst['right_val'] = seq_gap[i] - (grow_big if fmt(seq_gap[pos]) != 0 else grow_small)
             break
     if fmt(seq_gap[0] + eps) != fmt(seq_gap[-1] + eps):
-        if rst['gap_stat_val'] not in gap_stat:
-            if rst['gap_stat_val'] == 0:
-                if bigNear:
-                    rst['mid_judge_over'] = gap_stat[0.01] * 1.0 / len(seq) >= 0.5 and gap_stat[0.01] < len(seq)
-                else:
-                    rst['mid_judge_over'] = gap_stat[-0.01] * 1.0 / len(seq) >= 0.5 and gap_stat[-0.01] < len(seq)
-            # since rst['gap_stat_val'] not in gap_stat and rst['gap_stat_val'] is greater than 0, so must be big
-            elif rst['gap_stat_val'] == 0.01:
-                rst['mid_judge_over'] = gap_stat[0.02] * 1.0 / len(seq) >= 0.5 and gap_stat[0.01] < len(seq)
-            # since rst['gap_stat_val'] not in gap_stat and rst['gap_stat_val'] is less than 0, so must be small
-            elif rst['gap_stat_val'] == -0.01:
-                rst['mid_judge_over'] = gap_stat[-0.02] * 1.0 / len(seq) >= 0.5 and gap_stat[-0.01] < len(seq)
-            else:
-                raise ValueError('mid_judge_over value error', rst['gap_stat_val'])
-        elif fmt(seq_gap[0] + eps) == rst['gap_stat_val'] and big:
-            rst['mid_judge_over'] = 'big_equal'
-        elif fmt(seq_gap[-1] + eps) == rst['gap_stat_val'] and small:
-            rst['mid_judge_over'] = 'small_equal'
-        else:
-            rst['mid_judge_over'] = gap_stat[rst['gap_stat_val']] * 1.0 / len(seq) >= 0.5 and gap_stat[rst['gap_stat_val']] < len(seq)
+        if fmt(seq_gap[pos]) == fmt(seq_gap[0]) and big:
+            rst['gap_stat_val'] += 0.01
+            rst['gap'] = -0.01
+        elif fmt(seq_gap[pos]) == fmt(seq_gap[-1]) and small:
+            rst['gap_stat_val'] -= 0.01
+            rst['gap'] = 0.01
+        rst['mid_judge_over'] = gap_stat[rst['gap_stat_val']] * 1.0 / len(seq) >= 0.5
+        if data_len == 1495 and dt == '20260522':
+            print('训练时', gap_stat[rst['gap_stat_val']], len(seq), rst['mid_judge_over'], rst)
     if 'left_val' in rst and 'right_val' in rst:
         return 'BETWEEN', rst
-    # if pos - 1 > -1 and pos + 1 < len(seq):
-    #     if debug:
-    #         print('BETWEEN吗')
-    #     return 'BETWEEN', {
-    #         'gap_stat_val' : fmt(seq_gap[pos]),
-    #         'left_val' : seq_gap[pos - 1] + (grow_big if fmt(seq_gap[pos]) != 0 else grow_small),
-    #         'right_val' : seq_gap[pos + 1] - (grow_big if fmt(seq_gap[pos]) != 0 else grow_small)
-    #     }
     if debug:
         print('什么都没有吗')
     raise ValueError('train type not cover!', seq, seq_gap, label)
+
+def gap_stat_val_refine(config):
+    if isinstance(config['gap_stat_val'], str):
+        return config['gap_stat_val']
+    else:
+        return round(config['gap_stat_val'] + config['gap'], 2)
 
 def predict(
         arr,
@@ -714,11 +657,14 @@ def predict(
         gap_stat,
         config_arr,
         config_type,
+        data_len,
+        avg_window,
+        dt,
         debug=True
     ):
     if len(seq) == 0:
         return
-    fv_dict, seq_gap_single, pos_single = seq_merge(seq, seq_gap, None, 'predict')
+    fv_dict, seq_gap_single, pos_single, current_consecutive, non_current_consecutive = seq_merge(seq, seq_gap, None, 'predict')
     big = min(seq_gap) >= 0.015
     small = max(seq_gap) <= -0.015
     bigNear = min(seq_gap) >= 0 and max(seq_gap) < 0.015
@@ -731,92 +677,113 @@ def predict(
     if config_type == 'SINGLE':
         if len(seq_gap_single) == 1:
             for config in config_arr:
-                if eval("seq_gap[0] " + config['single_opt'] + " " + str(config['single_val'])):
+                if eval("seq_gap[0] " + config['single_opt'] + " " + str(config['single_val'])) and (len(seq) == 1 and not config['consecutive'] or len(seq) > 1 and config['consecutive']):
                     for v in seq:
                         arr.add(v)
     elif config_type == 'PAIR':
         if len(seq_gap_single) == 2:
             for config in config_arr:
+                head_consecutive = False
+                tail_consecutive = False
+                for i in range(1, len(seq)):
+                    if abs(seq_gap[i] - seq_gap[0]) < 0.0000001:
+                        head_consecutive = True
+                for i in range(len(seq) - 2, -1, -1):
+                    if abs(seq_gap[i] - seq_gap[-1]) < 0.0000001:
+                        tail_consecutive = True
                 if fmt(seq_gap[0] + eps) != fmt(seq_gap[-1] + eps):
                     if 'pos' in config and 'left_val' not in config:
-                        if gap_stat[config['gap_stat_val']] >= 1:
+                        if gap_stat[config['gap_stat_val']] > 0 and midJudge(seq, gap_stat, config['gap_stat_val'], config['mid_judge_over']):
                             if config['pos'] == 0:
-                                for i in range(len(seq)):
-                                    if abs(seq_gap[i] - seq_gap[0]) < 0.0000001:
-                                        arr.add(seq[i])
+                                current_cond = head_consecutive and config['current_consecutive'] or (not head_consecutive) and (not config['current_consecutive'])
+                                non_current_cond = tail_consecutive and config['non_current_consecutive'] or (not tail_consecutive) and (not config['non_current_consecutive'])
+                                if current_cond and non_current_cond:
+                                    for i in range(len(seq)):
+                                        if abs(seq_gap[i] - seq_gap[0]) < 0.0000001:
+                                            arr.add(seq[i])
                             elif config['pos'] == -1:
-                                for i in range(len(seq) - 1, -1, -1):
-                                    if abs(seq_gap[i] - seq_gap[-1]) < 0.0000001:
-                                        arr.add(seq[i])
+                                current_cond = tail_consecutive and config['current_consecutive'] or (not tail_consecutive) and (not config['current_consecutive'])
+                                non_current_cond = head_consecutive and config['non_current_consecutive'] or (not head_consecutive) and (not config['non_current_consecutive'])
+                                if current_cond and non_current_cond:
+                                    for i in range(len(seq) - 1, -1, -1):
+                                        if abs(seq_gap[i] - seq_gap[-1]) < 0.0000001:
+                                            arr.add(seq[i])
                             else:
                                 raise ValueError('pair pos not valid!', config['pos'])
-                            # arr.add(int(seq[config['pos']]))
                 else:
                     if 'left_val' in config:
                         if seq_gap[0] <= config['left_val'] and seq_gap[-1] >= config['right_val']:
                             if config['pos'] == 0:
-                                for i in range(len(seq)):
-                                    if abs(seq_gap[i] - seq_gap[0]) < 0.0000001:
-                                        arr.add(seq[i])
+                                current_cond = head_consecutive and config['current_consecutive'] or (not head_consecutive) and (not config['current_consecutive'])
+                                non_current_cond = tail_consecutive and config['non_current_consecutive'] or (not tail_consecutive) and (not config['non_current_consecutive'])
+                                if current_cond and non_current_cond:
+                                    for i in range(len(seq)):
+                                        if abs(seq_gap[i] - seq_gap[0]) < 0.0000001:
+                                            arr.add(seq[i])
                             elif config['pos'] == -1:
-                                for i in range(len(seq) - 1, -1, -1):
-                                    if abs(seq_gap[i] - seq_gap[-1]) < 0.0000001:
-                                        arr.add(seq[i])
+                                current_cond = tail_consecutive and config['current_consecutive'] or (not tail_consecutive) and (not config['current_consecutive'])
+                                non_current_cond = head_consecutive and config['non_current_consecutive'] or (not head_consecutive) and (not config['non_current_consecutive'])
+                                if current_cond and non_current_cond:
+                                    for i in range(len(seq) - 1, -1, -1):
+                                        if abs(seq_gap[i] - seq_gap[-1]) < 0.0000001:
+                                            arr.add(seq[i])
                             else:
                                 raise ValueError('pair pos not valid!', config['pos'])
-                            #arr.add(int(seq[config['pos']]))
     elif config_type == 'GAP':
         for config in config_arr:
             if midJudge(seq, gap_stat, config['gap_stat_val'], config['mid_judge_over']):
                 pos = eval(config['gap_and_consecutive']['pos'])
                 gapAndConsecutive(arr, seq, seq_gap, pos, left=config['gap_and_consecutive']['left'])
-    # elif config_type == 'TURN':
-    #     for config in config_arr:
-    #         if ((config['gap_stat_val'] == 0 and (bigNear or smallNear)) or config['gap_stat_val'] in gap_stat or (small or big) and abs(config['gap_stat_val']) == 0.01):
-    #             new_seq, new_seq_gap = cut_by_boundary(seq, seq_gap, config['gap_stat_val'])
-    #             if len(new_seq) > 2:
-    #                 findTurn(arr,
-    #                     new_seq, 
-    #                     new_seq_gap, 
-    #                     approach_threshold=0.0001, 
-    #                     gap_threshold=0.01,
-    #                     reverse=config['find_turn']['reverse'], 
-    #                     consecutive_at_left=config['find_turn']['consecutive_at_left'], 
-    #                     choose_single=config['find_turn']['choose_single']
-    #                 )
     elif config_type == 'SKIP':
         for config in config_arr:
             if midJudge(seq, gap_stat, config['gap_stat_val'], config['mid_judge_over']):
                 pos = eval(config['skip_pos'])
                 if eval('seq_gap[pos] ' + config['opt'] + ' ' + str(config['skip_val'])):
+                    pos_1_consecutive = False
+                    value_consecutive = False
                     if config['shift'] == -1:
                         for i in range(pos - 1, -1, -1):
                             if fmt(seq_gap[i] + eps) == fmt(seq_gap[pos] + eps) and abs(seq_gap[i] - seq_gap[pos]) >= 0.0000001:
-                                arr.add(int(seq[i]))
                                 for ii in range(i - 1, -1, -1):
                                     if abs(seq_gap[ii] - seq_gap[i]) < 0.0000001:
-                                        arr.add(int(seq[ii]))
+                                        value_consecutive = True
+                                break
+                            elif abs(seq_gap[i] - seq_gap[pos]) < 0.0000001:
+                                pos_1_consecutive = True
+                        for i in range(pos - 1, -1, -1):
+                            if fmt(seq_gap[i] + eps) == fmt(seq_gap[pos] + eps) and abs(seq_gap[i] - seq_gap[pos]) >= 0.0000001:
+                                if value_consecutive == config['value_consecutive'] and pos_1_consecutive == config['pos_1_consecutive']:
+                                    arr.add(int(seq[i]))
+                                for ii in range(i - 1, -1, -1):
+                                    if abs(seq_gap[ii] - seq_gap[i]) < 0.0000001:
+                                        if value_consecutive == config['value_consecutive'] and pos_1_consecutive == config['pos_1_consecutive']:
+                                            arr.add(int(seq[ii]))
                                 break
                     elif config['shift'] == 1:
                         for i in range(pos + 1, len(seq)):
                             if fmt(seq_gap[i] + eps) == fmt(seq_gap[pos] + eps) and abs(seq_gap[i] - seq_gap[pos]) >= 0.0000001:
-                                arr.add(int(seq[i]))
                                 for ii in range(i + 1, len(seq)):
                                     if abs(seq_gap[ii] - seq_gap[i]) < 0.0000001:
-                                        arr.add(int(seq[ii]))
+                                        value_consecutive = True
+                                break
+                            elif abs(seq_gap[i] - seq_gap[pos]) < 0.0000001:
+                                pos_1_consecutive = True
+                        for i in range(pos + 1, len(seq)):
+                            if fmt(seq_gap[i] + eps) == fmt(seq_gap[pos] + eps) and abs(seq_gap[i] - seq_gap[pos]) >= 0.0000001:
+                                if value_consecutive == config['value_consecutive'] and pos_1_consecutive == config['pos_1_consecutive']:
+                                    arr.add(int(seq[i]))
+                                for ii in range(i + 1, len(seq)):
+                                    if abs(seq_gap[ii] - seq_gap[i]) < 0.0000001:
+                                        if value_consecutive == config['value_consecutive'] and pos_1_consecutive == config['pos_1_consecutive']:
+                                            arr.add(int(seq[ii]))
                                 break
                     else:
                         raise ValueError('skip shift not valid!', config['shift'])
-                    # if pos + config['shift'] > -1 and pos + config['shift'] < len(seq):
-                    #     arr.add(int(seq[pos + config['shift']]))
     elif config_type == 'END_POINT':
         for config in config_arr:
-            cond_a = ((config['gap_stat_val'] == 0 and (bigNear or smallNear)) or config['gap_stat_val'] in gap_stat or (small or big) and abs(config['gap_stat_val']) == 0.01) and config['mid_judge_over'] == 'equal' and fmt(seq_gap[0] + eps) == fmt(seq_gap[-1] + eps)
-            cond_b = config['gap_stat_val'] in gap_stat and midJudge(seq, gap_stat, config['gap_stat_val'], config['mid_judge_over'])
-            if cond_a or cond_b:
+            if config['gap_stat_val'] in gap_stat and (isinstance(config['mid_judge_over'], bool) and midJudge(seq, gap_stat, config['gap_stat_val'], config['mid_judge_over']) or config['mid_judge_over'] == 'equal'):
                 pos = config['end_point']['pos']
                 if eval('seq_gap[pos] ' + config['end_point']['opt'] + ' ' + str(config['end_point']['val'])):
-                    # arr.add(int(seq[pos]))
                     if pos == 0:
                         for i in range(len(seq)):
                             if abs(seq_gap[i] - seq_gap[0]) < 0.0000001:
@@ -832,17 +799,11 @@ def predict(
         right_valid = False
         if len(seq_gap_single) > 2:
             for config in config_arr:
-                cond_a = ((config['gap_stat_val'] == 0 and (bigNear or smallNear)) or config['gap_stat_val'] in gap_stat or (small or big) and abs(config['gap_stat_val']) == 0.01) and config['mid_judge_over'] == 'equal' and fmt(seq_gap[0] + eps) == fmt(seq_gap[-1] + eps)
-                cond_b = config['gap_stat_val'] in gap_stat and midJudge(seq, gap_stat, config['gap_stat_val'], config['mid_judge_over'])
-                cond_c = config['gap_stat_val'] == 0 and bigNear and midJudge(seq, gap_stat, 0.01, config['mid_judge_over'])
-                cond_d = config['gap_stat_val'] == 0 and smallNear and midJudge(seq, gap_stat, -0.01, config['mid_judge_over'])
-                cond_e = config['gap_stat_val'] == 0.01 and big and midJudge(seq, gap_stat, 0.02, config['mid_judge_over'])
-                cond_f = config['gap_stat_val'] == -0.01 and small and midJudge(seq, gap_stat, -0.02, config['mid_judge_over'])
-                cond_g = config['gap_stat_val'] == fmt(seq_gap[0] + eps) and config['mid_judge_over'] == 'big_equal' and big and fmt(seq_gap[0] + eps) != fmt(seq_gap[-1] + eps)
-                cond_h = config['gap_stat_val'] == fmt(seq_gap[-1] + eps) and config['mid_judge_over'] == 'small_equal' and small and fmt(seq_gap[0] + eps) != fmt(seq_gap[-1] + eps)
-                if cond_a or cond_b or cond_c or cond_d or cond_e or cond_f or cond_g or cond_h:
+                if config['gap_stat_val'] in gap_stat and (isinstance(config['mid_judge_over'], bool) and midJudge(seq, gap_stat, config['gap_stat_val'], config['mid_judge_over']) or config['mid_judge_over'] == 'equal'):
                     for p in range(len(seq)):
-                        if fmt(seq_gap[p]) == config['gap_stat_val']:
+                        if data_len == 1495 and dt == '20260522' and p == 7:
+                            print('这里吗看', seq_gap[p], gap_stat_val_refine(config), fmt(seq_gap[p]), config['gap_stat_val'], config['gap'])
+                        if fmt(seq_gap[p]) == gap_stat_val_refine(config) or (fmt(seq_gap[p]) == 0 and (seq_gap[p] < 0 and config['gap_stat_val'] == '-0' or seq_gap[p] >= 0 and config['gap_stat_val'] == '+0')):
                             left_valid = False
                             right_valid = False
                             seq_cand = [seq[p]]
@@ -863,15 +824,6 @@ def predict(
                             if left_valid and right_valid:
                                 for v in seq_cand:
                                     arr.add(int(v))
-                                # break
-                        # if p - 1 > -1 and p + 1 < len(seq) and fmt(seq_gap[p]) == config['gap_stat_val'] and seq_gap[p-1] <= config['left_val'] and seq_gap[p+1] >= config['right_val']:
-                        #     arr.add(int(seq[p]))
-                        #     break
-    # elif config_type == 'ALL':
-    #     if len(seq) > 1:
-    #         if seq_gap[0] == seq_gap[-1]:
-    #             for v in seq:
-    #                 arr.add(int(v))
     else:
         raise ValueError('config type not valid!', config_type)
 
@@ -881,10 +833,10 @@ def range_confirm(big_tmp, small_tmp, big_near_tmp, small_near_tmp, label, label
     label = int(label)
     if label in big_tmp:
         condition_arr = [
-            'len(big_tmp) >= len(small_tmp) and len(big_tmp) >= len(small_near_tmp)',
+            # 'len(big_tmp) >= len(small_tmp) and len(big_tmp) >= len(small_near_tmp)',
             'len(big_tmp) - len(small_tmp) >= %s and len(big_tmp) - len(small_near_tmp) >= %s' % (diff, diff),
-            'len(big_tmp) >= len(small_tmp)',
-            'len(big_tmp) >= len(small_near_tmp)',
+            # 'len(big_tmp) >= len(small_tmp)',
+            # 'len(big_tmp) >= len(small_near_tmp)',
             'len(big_tmp) - len(small_tmp) >= %s' % diff,
             'len(big_tmp) - len(small_near_tmp) >= %s' % diff
         ]
@@ -894,10 +846,10 @@ def range_confirm(big_tmp, small_tmp, big_near_tmp, small_near_tmp, label, label
         return 'big_tmp'
     if label in small_tmp:
         condition_arr = [
-            'len(small_tmp) >= len(big_tmp) and len(small_tmp) >= len(big_near_tmp)',
+            # 'len(small_tmp) >= len(big_tmp) and len(small_tmp) >= len(big_near_tmp)',
             'len(small_tmp) - len(big_tmp) >= %s and len(small_tmp) - len(big_near_tmp) >= %s' % (diff, diff),
-            'len(small_tmp) >= len(big_tmp)',
-            'len(small_tmp) >= len(big_near_tmp)',
+            # 'len(small_tmp) >= len(big_tmp)',
+            # 'len(small_tmp) >= len(big_near_tmp)',
             'len(small_tmp) - len(big_tmp) >= %s' % diff,
             'len(small_tmp) - len(big_near_tmp) >= %s' % diff
         ]
@@ -907,10 +859,10 @@ def range_confirm(big_tmp, small_tmp, big_near_tmp, small_near_tmp, label, label
         return 'small_tmp'
     if label in big_near_tmp:
         condition_arr = [
-            'len(big_near_tmp) >= len(small_tmp) and len(big_near_tmp) >= len(small_near_tmp)',
+            # 'len(big_near_tmp) >= len(small_tmp) and len(big_near_tmp) >= len(small_near_tmp)',
             'len(big_near_tmp) - len(small_tmp) >= %s and len(big_near_tmp) - len(small_near_tmp) >= %s' % (diff, diff),
-            'len(big_near_tmp) >= len(small_tmp)',
-            'len(big_near_tmp) >= len(small_near_tmp)',
+            # 'len(big_near_tmp) >= len(small_tmp)',
+            # 'len(big_near_tmp) >= len(small_near_tmp)',
             'len(big_near_tmp) - len(small_tmp) >= %s' % diff,
             'len(big_near_tmp) - len(small_near_tmp) >= %s' % diff
         ]
@@ -920,10 +872,10 @@ def range_confirm(big_tmp, small_tmp, big_near_tmp, small_near_tmp, label, label
         return 'big_near_tmp'
     if label in small_near_tmp:
         condition_arr = [
-            'len(small_near_tmp) >= len(big_tmp) and len(small_near_tmp) >= len(big_near_tmp)',
+            # 'len(small_near_tmp) >= len(big_tmp) and len(small_near_tmp) >= len(big_near_tmp)',
             'len(small_near_tmp) - len(big_tmp) >= %s and len(small_near_tmp) - len(big_near_tmp) >= %s' % (diff, diff),
-            'len(small_near_tmp) >= len(big_tmp)',
-            'len(small_near_tmp) >= len(big_near_tmp)',
+            # 'len(small_near_tmp) >= len(big_tmp)',
+            # 'len(small_near_tmp) >= len(big_near_tmp)',
             'len(small_near_tmp) - len(big_tmp) >= %s' % diff,
             'len(small_near_tmp) - len(big_near_tmp) >= %s' % diff
         ]
@@ -951,7 +903,11 @@ def train_and_predict(config,
         arr_copy,
         name,
         label,
-        label_pos):
+        label_pos,
+        data_len,
+        avg_window,
+        dt,
+        debug=True):
     hit = False
     if config_copy is not None and strategy_name in config_copy:
         for condition in config_copy[strategy_name]:
@@ -964,7 +920,10 @@ def train_and_predict(config,
                         eval(seq_gap), 
                         near_gap_stat if 'near' in seq else gap_stat,
                         config_copy[strategy_name][condition][config_type],
-                        config_type
+                        config_type,
+                        data_len,
+                        avg_window,
+                        dt
                     )
     if strategy_name in config:
         for condition in config[strategy_name]:
@@ -977,7 +936,10 @@ def train_and_predict(config,
                         eval(seq_gap), 
                         near_gap_stat if 'near' in seq else gap_stat,
                         config[strategy_name][condition][config_type],
-                        config_type
+                        config_type,
+                        data_len,
+                        avg_window,
+                        dt
                     )
                 if label is not None and int(label) in arr:
                     hit = True
@@ -993,7 +955,12 @@ def train_and_predict(config,
             eval(seq), 
             eval(seq_gap), 
             near_gap_stat if 'near' in seq else gap_stat, 
-            label)
+            label,
+            data_len,
+            avg_window,
+            dt,
+            debug
+        )
         if config_type not in config[strategy_name][condition]:
             config[strategy_name][condition][config_type] = []
         merge_rule(config[strategy_name][condition][config_type], config_type, rule)
@@ -1002,7 +969,11 @@ def train_and_predict(config,
             eval(seq_gap), 
             near_gap_stat if 'near' in seq else gap_stat,
             config[strategy_name][condition][config_type],
-            config_type
+            config_type,
+            data_len,
+            avg_window,
+            dt,
+            debug
         )
     return not hit
 
@@ -1010,11 +981,11 @@ def train_and_predict(config,
 def merge_rule(rule_arr, rule_type, new_rule):
     grow = None
     if 'gap_stat_val' in new_rule:
-        grow = grow_small if fmt(new_rule['gap_stat_val']) == 0 else grow_big
+        grow = grow_small if new_rule['gap_stat_val'] in ('+0', '-0') else grow_big
     merge_hit=False
     if rule_type == 'SINGLE':
         for old_rule in rule_arr:
-            if old_rule['gap_stat_val'] == new_rule['gap_stat_val'] and old_rule['single_opt'] == new_rule['single_opt']:
+            if old_rule['gap_stat_val'] == new_rule['gap_stat_val'] and old_rule['single_opt'] == new_rule['single_opt'] and old_rule['consecutive'] == new_rule['consecutive']:
                 if abs(new_rule['single_val'] - old_rule['single_val']) <= grow:
                     merge_hit = True
                     if old_rule['single_opt'] == '<' and new_rule['single_val'] > old_rule['single_val']:
@@ -1023,14 +994,14 @@ def merge_rule(rule_arr, rule_type, new_rule):
                         old_rule['single_val'] = new_rule['single_val']
     elif rule_type == 'PAIR' and 'right_val' in new_rule and 'left_val' in new_rule:
         for old_rule in rule_arr:
-            if old_rule['pos'] == new_rule['pos']:
+            if old_rule['pos'] == new_rule['pos'] and old_rule['current_consecutive'] == new_rule['current_consecutive'] and old_rule['non_current_consecutive'] == new_rule['non_current_consecutive']:
                 if 'right_val' in old_rule and 'left_val' in old_rule and abs(old_rule['right_val'] - new_rule['right_val']) <= grow and abs(old_rule['left_val'] - new_rule['right_val']) <= grow:
                     merge_hit = True
                     old_rule['right_val'] = min(old_rule['right_val'], new_rule['right_val'])
                     old_rule['left_val'] = max(old_rule['left_val'], new_rule['left_val'])
     elif rule_type == 'SKIP':
         for old_rule in rule_arr:
-            if old_rule['mid_judge_over'] == new_rule['mid_judge_over'] and old_rule['gap_stat_val'] == new_rule['gap_stat_val'] and old_rule['opt'] == new_rule['opt']:
+            if old_rule['mid_judge_over'] == new_rule['mid_judge_over'] and old_rule['gap_stat_val'] == new_rule['gap_stat_val'] and old_rule['opt'] == new_rule['opt'] and old_rule['pos_1_consecutive'] == new_rule['pos_1_consecutive'] and old_rule['value_consecutive'] == new_rule['value_consecutive']:
                  if abs(new_rule['skip_val'] - old_rule['skip_val']) <= grow:
                     merge_hit = True
                     if old_rule['opt'] == '<' and new_rule['skip_val'] > old_rule['skip_val']:
@@ -1048,7 +1019,7 @@ def merge_rule(rule_arr, rule_type, new_rule):
                         old_rule['end_point']['val'] = new_rule['end_point']['val']
     elif rule_type == 'BETWEEN':
         for old_rule in rule_arr:
-            if old_rule['gap_stat_val'] == new_rule['gap_stat_val']:
+            if old_rule['gap_stat_val'] == new_rule['gap_stat_val'] and old_rule['mid_judge_over'] == new_rule['mid_judge_over'] and old_rule['gap'] == new_rule['gap']:
                 if abs(old_rule['right_val'] - new_rule['right_val']) <= grow and abs(old_rule['left_val'] - new_rule['right_val']) <= grow:
                     merge_hit = True
                     old_rule['right_val'] = min(old_rule['right_val'], new_rule['right_val'])

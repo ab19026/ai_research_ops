@@ -65,44 +65,62 @@ process_map = {
 }
 
 
-def pattern_check(name, prob_cand_arr, pred, label_dim, avg_window, data_len, good_count, true_label, mode=None, range_stat=None, config=None, config_copy=None):
+def pattern_check(name, prob_cand_arr, pred, label_dim, avg_window, data_len, good_count, true_label, mode=None, range_stat=None, config=None, config_copy=None, dt=None):
     count = {'big' : 0, 'small' : 0, 'near' : 0}
     previousPos = {'big' : -(sys.maxsize) - 1, 'small' : -(sys.maxsize) - 1, 'near' : -(sys.maxsize) - 1}
     consecutiveCount = {'big' : 0, 'small' : 0, 'near' : 0}
     maxConsecutiveCount = {'big' : 0, 'small' : 0, 'near' : 0}
     seq = {'big' : [], 'small' : [], 'near' : [], 'smallNear' : [], 'bigNear' : []}
-    smallNear = []
-    bigNear = []
-    gapStat = {0.02 : 0, 0.03 : 0, 0.04 : 0, 0.05 : 0, 0.06 : 0, 0.07 : 0, 0.08 : 0, 0.09 : 0, -0.02 : 0, -0.03 : 0, -0.04 : 0, -0.05 : 0, -0.06 : 0, -0.07 : 0, -0.08 : 0, -0.09 : 0}
-    nearGapStat = {-0.01 : 0, 0.01 : 0}
+    gapStat = {0.01 : 0, 0.02 : 0, 0.03 : 0, 0.04 : 0, 0.05 : 0, 0.06 : 0, 0.07 : 0, 0.08 : 0, 0.09 : 0, -0.01 : 0, -0.02 : 0, -0.03 : 0, -0.04 : 0, -0.05 : 0, -0.06 : 0, -0.07 : 0, -0.08 : 0, -0.09 : 0}
+    nearGapStat = {-0.01 : 0, 0.01 : 0, '+0' : 0, '-0' : 0}
     for i in range(len(prob_cand_arr)):
         v = prob_cand_arr[i]
-        if v - pred >= 0.015:
+        gap_on_pred = v - pred
+        # big or small
+        if gap_on_pred >= 0.015 and gap_on_pred < 0.02 - 0.0001:
+            seq['big'].append(i)
+            pattern_check_detail(count, previousPos, consecutiveCount, maxConsecutiveCount, 'big', i)
+            gapStat[0.01] += 1
+        elif gap_on_pred >= 0.02 - 0.0001:
             seq['big'].append(i)
             pattern_check_detail(count, previousPos, consecutiveCount, maxConsecutiveCount, 'big', i)
             for key in gapStat:
-                if key > 0 and v - pred >= key - 0.0001:
+                if key > 0 and gap_on_pred >= key - 0.0001:
                     gapStat[key] += 1
-        elif v - pred <= -0.015:
+        elif gap_on_pred <= -0.015 and gap_on_pred > -0.02 + 0.0001:
+            seq['small'].append(i)
+            pattern_check_detail(count, previousPos, consecutiveCount, maxConsecutiveCount, 'small', i)
+            gapStat[-0.01] += 1
+        elif gap_on_pred <= -0.02 + 0.0001:
             seq['small'].append(i)
             pattern_check_detail(count, previousPos, consecutiveCount, maxConsecutiveCount, 'small', i)
             for key in gapStat:
-                if key < 0 and v - pred <= key + 0.0001:
+                if key < 0 and gap_on_pred <= key + 0.0001:
                     gapStat[key] += 1
-        else:
+        # bigNear or smallNear
+        elif gap_on_pred >= 0.01 and gap_on_pred < 0.015:
             seq['near'].append(i)
             pattern_check_detail(count, previousPos, consecutiveCount, maxConsecutiveCount, 'near', i)
-            if v - pred < 0:
-                seq['smallNear'].append(i)
-                if v - pred <= -0.01:
-                    nearGapStat[-0.01] += 1
-            else:
-                seq['bigNear'].append(i)
-                if v - pred >= 0.01:
-                    nearGapStat[0.01] += 1
+            seq['bigNear'].append(i)
+            nearGapStat[0.01] += 1
+        elif gap_on_pred >= 0 and gap_on_pred < 0.01:
+            seq['near'].append(i)
+            pattern_check_detail(count, previousPos, consecutiveCount, maxConsecutiveCount, 'near', i)
+            seq['bigNear'].append(i)
+            nearGapStat['+0'] += 1
+        elif gap_on_pred <= -0.01 and gap_on_pred > -0.015:
+            seq['near'].append(i)
+            pattern_check_detail(count, previousPos, consecutiveCount, maxConsecutiveCount, 'near', i)
+            seq['smallNear'].append(i)
+            nearGapStat[-0.01] += 1
+        elif gap_on_pred < 0 and gap_on_pred > -0.01:
+            seq['near'].append(i)
+            pattern_check_detail(count, previousPos, consecutiveCount, maxConsecutiveCount, 'near', i)
+            seq['smallNear'].append(i)
+            nearGapStat['-0'] += 1
     # 自动生成
     if 'AUTO' in mode:
-        return auto_process(count, maxConsecutiveCount, seq, nearGapStat, gapStat, prob_cand_arr, pred, avg_window, data_len, good_count, range_stat, name, true_label, label_dim, config, config_copy)
+        return auto_process(count, maxConsecutiveCount, seq, nearGapStat, gapStat, prob_cand_arr, pred, avg_window, data_len, good_count, range_stat, name, true_label, label_dim, config, config_copy, dt)
     # 用原始人工方法预测
     elif mode == 'MANUALLY_PREDICT':
         return process_map[name][label_dim](count, maxConsecutiveCount, seq, nearGapStat, gapStat, prob_cand_arr, pred, avg_window, data_len, good_count, range_stat, name, true_label, label_dim), None, False
