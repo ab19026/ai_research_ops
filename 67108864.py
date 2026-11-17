@@ -1,18 +1,21 @@
-from keras_kit import *
+
 from base import *
 import sys,os
 import uuid
 import shutil
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
-from tensorflow.keras.backend import clear_session
-import tensorflow as tf
+
 try:
-    from xgboost import XGBClassifier
+    from tensorflow.keras.backend import clear_session
+    import tensorflow as tf
+    from keras_kit import *
+    # tf.config.experimental.set_visible_devices([], 'GPU')
 except:
     pass
+
 from sklearn.metrics import accuracy_score
-tf.config.experimental.set_visible_devices([], 'GPU')
+
 
 MODE_FIND = 'MODE_FIND'
 MODE_SHOW = 'MODE_SHOW'
@@ -621,6 +624,221 @@ def model_train_and_predict(train=None, test=None, pred=None, target=True, debug
     return train_result, test_result, pred_result, target_result
 
 
+def model_train_and_predict_by_torch(train=None, test=None, pred=None, target=True, debug=True, label_mode='REG', drop_rate=None, direct=True, remaining=None, device=None, torch_num_threads=1):
+    """Train and predict with the CNN topology used by model_train_and_predict.
+
+    The function keeps model state, tensors, and the best checkpoint in the current
+    process. Set ``device='cuda:0'`` to require the first CUDA GPU. Limiting each
+    independent process to one PyTorch CPU thread prevents eight GPU jobs from
+    oversubscribing the host CPU.
+    """
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as torch_functional
+    from torch.utils.data import DataLoader, TensorDataset
+
+    if label_mode not in ['REG', 'CAT']:
+        raise ValueError('label_mode must be REG or CAT')
+    if drop_rate is None:
+        raise ValueError('drop_rate must be provided')
+    if torch_num_threads is not None:
+        torch.set_num_threads(int(torch_num_threads))
+
+    if device is None:
+        device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+    torch_device = torch.device(device)
+    if torch_device.type == 'cuda':
+        if not torch.cuda.is_available():
+            raise RuntimeError('CUDA was requested but is not available to PyTorch')
+        torch.cuda.set_device(torch_device)
+
+    def prepare_x(values):
+        values = np.asarray(values, dtype=np.float32)
+        if values.ndim == 3:
+            # This is the same (batch, axis_2, axis_1) layout produced by the
+            # TensorFlow implementation's np.transpose(..., (0, 2, 1)).
+            return np.transpose(values, (0, 2, 1)).copy()
+        if values.ndim == 4:
+            # The TensorFlow Conv2D branch expects channels-last NHWC input.
+            return values.copy()
+        raise ValueError('CNN inputs must be rank-3 for Conv1D or rank-4 for Conv2D')
+
+    train_x = prepare_x(train['x'])
+    test_x = prepare_x(test['x'])
+    train_y = np.asarray(train['y'], dtype=np.float32)
+    test_y = np.asarray(test['y'], dtype=np.float32)
+    if train_y.ndim == 1:
+        train_y = train_y.reshape(-1, 1)
+    if test_y.ndim == 1:
+        test_y = test_y.reshape(-1, 1)
+    label_dim = train_y.shape[1]
+    is_1d = train_x.ndim == 3
+
+    class ElementwisePReLU(nn.Module):
+        def __init__(self, shape):
+            super().__init__()
+            self.weight = nn.Parameter(torch.zeros(shape))
+
+        def forward(self, values):
+            return torch.where(values >= 0, values, self.weight * values)
+
+    class TorchCNN(nn.Module):
+        def __init__(self):
+            super().__init__()
+            if is_1d:
+                # Keras Conv1D consumes (batch, steps, channels); PyTorch uses
+                # (batch, channels, steps), hence the conversion in forward().
+                input_length, input_channels = train_x.shape[1:]
+                output_length = input_length - 4
+                if output_length < 1:
+                    raise ValueError('Conv1D requires an input length of at least 5')
+                self.conv1 = nn.Conv1d(input_channels, DIMENSION, kernel_size=5)
+                self.prelu1 = ElementwisePReLU((1, DIMENSION, output_length))
+                self.conv2 = nn.Conv1d(DIMENSION, DIMENSION, kernel_size=1)
+                self.prelu2 = ElementwisePReLU((1, DIMENSION, output_length))
+                flattened_size = DIMENSION * output_length
+            else:
+                input_height, input_width, input_channels = train_x.shape[1:]
+                self.conv1 = nn.Conv2d(input_channels, DIMENSION, kernel_size=(1, 1), stride=(1, 1))
+                self.prelu1 = ElementwisePReLU((1, DIMENSION, input_height, input_width))
+                self.conv2 = nn.Conv2d(DIMENSION, DIMENSION, kernel_size=(1, 1), stride=(1, 1))
+                self.prelu2 = ElementwisePReLU((1, DIMENSION, input_height, input_width))
+                flattened_size = DIMENSION * input_height * input_width
+            self.is_1d = is_1d
+            self.dropout = nn.Dropout(drop_rate)
+            self.output = nn.Linear(flattened_size, label_dim)
+            self.output_activation = nn.Sigmoid() if label_mode == 'CAT' else ElementwisePReLU((1, label_dim))
+
+        def forward(self, values):
+            if self.is_1d:
+                values = values.permute(0, 2, 1)
+            else:
+                values = values.permute(0, 3, 1, 2)
+            values = self.prelu1(self.conv1(values))
+            values = self.prelu2(self.conv2(values))
+            values = torch.flatten(values, start_dim=1)
+            values = self.dropout(values)
+            return self.output_activation(self.output(values))
+
+    def loss_function(outputs, labels):
+        if label_mode == 'CAT':
+            # Keras BinaryFocalCrossentropy defaults apply_class_balancing=False;
+            # alpha=0.85 in the existing function therefore does not affect loss.
+            clipped = outputs.clamp(min=1e-7, max=1.0 - 1e-7)
+            probability_of_truth = labels * clipped + (1.0 - labels) * (1.0 - clipped)
+            return (-(1.0 - probability_of_truth).pow(2) * torch.log(probability_of_truth)).mean()
+        difference = outputs - labels
+        return (difference + torch_functional.softplus(-2.0 * difference) - np.log(2.0)).mean()
+
+    def predict(values, batch_size):
+        value_tensor = torch.as_tensor(prepare_x(values), dtype=torch.float32)
+        value_loader = DataLoader(
+            TensorDataset(value_tensor),
+            batch_size=batch_size,
+            shuffle=False,
+            num_workers=0,
+            pin_memory=torch_device.type == 'cuda',
+        )
+        chunks = []
+        model.eval()
+        with torch.no_grad():
+            for (batch_x,) in value_loader:
+                batch_x = batch_x.to(torch_device, non_blocking=True)
+                chunks.append(model(batch_x).cpu())
+        return torch.cat(chunks).numpy()
+
+    batch_size = 32
+    train_dataset = TensorDataset(torch.as_tensor(train_x), torch.as_tensor(train_y))
+    test_dataset = TensorDataset(torch.as_tensor(test_x), torch.as_tensor(test_y))
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=torch_device.type == 'cuda')
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=0, pin_memory=torch_device.type == 'cuda')
+    model = TorchCNN().to(torch_device)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=0.00001 if label_mode == 'CAT' else 0.0001)
+    best_monitor = float('-inf') if label_mode == 'CAT' else float('inf')
+    best_state = None
+    if debug:
+        print(model)
+    print('真实长度:', 'train', len(train_x), 'test', len(test_x))
+    if remaining is not None:
+        print('还剩: ' + str(remaining) + ' 轮')
+
+    for epoch in range(120):
+        model.train()
+        for batch_x, batch_y in train_loader:
+            batch_x = batch_x.to(torch_device, non_blocking=True)
+            batch_y = batch_y.to(torch_device, non_blocking=True)
+            optimizer.zero_grad(set_to_none=True)
+            loss = loss_function(model(batch_x), batch_y)
+            loss.backward()
+            optimizer.step()
+
+        model.eval()
+        validation_loss = 0.0
+        validation_correct = 0
+        validation_values = 0
+        with torch.no_grad():
+            for batch_x, batch_y in test_loader:
+                batch_x = batch_x.to(torch_device, non_blocking=True)
+                batch_y = batch_y.to(torch_device, non_blocking=True)
+                outputs = model(batch_x)
+                validation_loss += loss_function(outputs, batch_y).item() * batch_y.shape[0]
+                if label_mode == 'CAT':
+                    validation_correct += ((outputs >= 0.5) == (batch_y >= 0.5)).sum().item()
+                    validation_values += batch_y.numel()
+        validation_loss /= len(test_dataset)
+        monitor_value = validation_correct / validation_values if label_mode == 'CAT' else validation_loss
+        is_better = monitor_value > best_monitor if label_mode == 'CAT' else monitor_value < best_monitor
+        if is_better:
+            best_monitor = monitor_value
+            best_state = {key: value.detach().cpu().clone() for key, value in model.state_dict().items()}
+        if debug:
+            metric_name = 'val_binary_accuracy' if label_mode == 'CAT' else 'val_loss'
+            print('Epoch {}/120, {}: {:.6f}'.format(epoch + 1, metric_name, monitor_value))
+
+    model.load_state_dict(best_state)
+    train_pred = predict(train['x'], batch_size)
+    test_pred = predict(test['x'], batch_size)
+    train_result = {'y': train['y'], 'pred': train_pred}
+    test_result = {'y': test['y'], 'pred': test_pred}
+    pred_result = {}
+    target_result = {}
+    if direct:
+        if pred is not None and 'y' in pred:
+            pred_result['y'] = [pred['y'][index] for index in range(len(pred['y']))]
+            pred_result['pred'] = predict(pred['x'], batch_size)
+        if target is not None and 'y' in target:
+            target_result['y'] = [target['y'][index] for index in range(len(target['y']))]
+            target_result['pred'] = predict(target['x'], batch_size)
+    else:
+        for dt in pred:
+            pred_result[dt] = {}
+            for label in pred[dt]:
+                item = pred[dt][label]
+                pred_result[dt][label] = {
+                    'data_len': item['data_len'], 'avg_window': item['avg_window'],
+                    'good_count': item['good_count'], 'qxc': item['qxc'],
+                    'stat_diff_info': item['stat_diff_info'], 'prob_cand_arr': item['prob_cand_arr'],
+                    'pred_as_label': item['pred'], 'y': item['y'], 'x': item['x'],
+                    'pred': predict(item['x'], batch_size),
+                }
+        for dt in target:
+            target_result[dt] = {}
+            for label in target[dt]:
+                item = target[dt][label]
+                target_result[dt][label] = {
+                    'data_len': item['data_len'], 'avg_window': item['avg_window'],
+                    'good_count': item['good_count'], 'qxc': item['qxc'],
+                    'stat_diff_info': item['stat_diff_info'], 'prob_cand_arr': item['prob_cand_arr'],
+                    'pred_as_label': item['pred'], 'y': item['y'], 'x': item['x'],
+                    'pred': predict(item['x'], batch_size),
+                }
+    del best_state
+    del model
+    if torch_device.type == 'cuda':
+        torch.cuda.empty_cache()
+    return train_result, test_result, pred_result, target_result
+
+
 
 def execute_secondary_global(name, exclude_dt, acc_sample_num, target_dt, pred_dt, test_ratio, label_pos):
     data, pred_target = load_secondary(name, exclude_dt, acc_sample_num, target_dt, pred_dt, test_ratio)
@@ -659,7 +877,7 @@ def execute_single(name, mode, shrink, label_and_combine, metric_mode, avg_windo
         if data_mode == 'PURE_TIME_SERIES':
             pass#pred_pred, pred_y, target_pred = dart_test(data, model_use=DART_MODEL_N_LINEAR,input_chunk_length=time_window,output_chunk_length=output_chunk_length)
         else:
-            train_result, test_result, pred_result, target_result = model_train_and_predict(train=data['train'], test=data['test'], pred=data['pred'], target=data['target'], debug=(mode==MODE_SHOW), label_mode=label_mode, drop_rate=drop_rate)
+            train_result, test_result, pred_result, target_result = model_train_and_predict_by_torch(train=data['train'], test=data['test'], pred=data['pred'], target=data['target'], debug=(mode==MODE_SHOW), label_mode=label_mode, drop_rate=drop_rate)
         for row in show:
             print(row)
             prob_cand_html += str(row) + '<br\\>'
