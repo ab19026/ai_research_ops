@@ -4,6 +4,8 @@ import sys,os
 import uuid
 import shutil
 import ssl
+import builtins
+import numpy
 ssl._create_default_https_context = ssl._create_unverified_context
 
 try:
@@ -21,6 +23,17 @@ MODE_FIND = 'MODE_FIND'
 MODE_SHOW = 'MODE_SHOW'
 USE_MODE_CNN = 'USE_MODE_CNN'
 USE_MODE_DART = 'USE_MODE_DART'
+
+def previous_draw_date(date_str: str) -> str:
+    if len(date_str) != 8 or not date_str.isascii() or not date_str.isdigit():
+        raise ValueError("日期必须是 YYYYMMDD 格式的 8 位数字")
+    input_date = datetime.strptime(date_str, "%Y%m%d").date()
+    target_weekdays = (1, 4, 6)
+    days_back = builtins.min(
+        (input_date.weekday() - weekday) % 7 or 7
+        for weekday in target_weekdays
+    )
+    return (input_date - timedelta(days=days_back)).strftime("%Y%m%d")
 
 
 def prepare_cnn_inner(raw, label_dim, drop_rate):
@@ -503,7 +516,7 @@ def model_train_and_predict(train=None, test=None, pred=None, target=True, debug
         'x' : Input(shape=(train['x'][0].shape), name='x'),
     }
     if debug:
-        print('输入shape')
+        print('input shape')
         print('train', train['x'].shape)
         print('test', test['x'].shape)
         print('pred', pred['x'].shape)
@@ -538,9 +551,9 @@ def model_train_and_predict(train=None, test=None, pred=None, target=True, debug
         model.compile(optimizer=AdamW(learning_rate=0.0001), loss='log_cosh')
     if debug:
         print(model.summary())
-    print('真实长度:', 'train', len(train['x']), 'test', len(test['x']))
+    print('real length:', 'train', len(train['x']), 'test', len(test['x']))
     if remaining is not None:
-        print('还剩: ' + str(remaining) +' 轮')
+        print('remaining: ' + str(remaining) +' rounds')
     checkpoint_filepath = label_mode + '_' + str(uuid.uuid1()).replace('-', '') + '.weights.h5'
     model_checkpoint_callback = keras.callbacks.ModelCheckpoint(
         filepath=checkpoint_filepath,
@@ -758,9 +771,9 @@ def model_train_and_predict_by_torch(train=None, test=None, pred=None, target=Tr
     best_state = None
     if debug:
         print(model)
-    print('真实长度:', 'train', len(train_x), 'test', len(test_x))
+    print('real length:', 'train', len(train_x), 'test', len(test_x))
     if remaining is not None:
-        print('还剩: ' + str(remaining) + ' 轮')
+        print('remaining: ' + str(remaining) + ' rounds')
 
     for epoch in range(120):
         model.train()
@@ -846,8 +859,11 @@ def execute_secondary_global(name, exclude_dt, acc_sample_num, target_dt, pred_d
     
 
 
-def execute_single(name, mode, shrink, label_and_combine, metric_mode, avg_window, drop_rate, pred_len, smoothing_mode=SMOOTH_EMA_STATE, ema_alpha=None):
-    with open(name.split('_')[0] + '_raw_txt') as file:
+def execute_single(name, mode, shrink, label_and_combine, metric_mode, avg_window, drop_rate, pred_len, smoothing_mode=SMOOTH_EMA_STATE, ema_alpha=None, target_date=None):
+    last_date = None
+    if target_date is not None:
+        last_date = previous_draw_date(target_date)
+    with open(name.split('_')[0] + ('_raw_txt' if last_date is None else '_raw_history/' + last_date)) as file:
         for line in file:
             line = line.replace('\n', '').split(' ')
     output_chunk_length=2
@@ -861,8 +877,8 @@ def execute_single(name, mode, shrink, label_and_combine, metric_mode, avg_windo
     result = {'combine' : [combine[-1],combine[-1]], 'left_02' : 0, 'right_02' : 0, 'left_01' : 0, 'right_01' : 0, 'qxc' : line}
     if mode == MODE_FIND:
         exist = set()
-        if os.path.exists(name + '/metric/find_best_' + str(label_dim) + '_' + metric_mode + '_' + dr + '_' + aw + '.txt'):
-            exist = get_exist_combines(name + '/metric/find_best_' + str(label_dim) + '_' + metric_mode + '_' + dr + '_' + aw + '.txt')
+        if os.path.exists(name + '/%s/find_best_' % ('metric' if target_date is None else target_date) + str(label_dim) + '_' + metric_mode + '_' + dr + '_' + aw + '.txt'):
+            exist = get_exist_combines(name + '/%s/find_best_' % ('metric' if target_date is None else target_date) + str(label_dim) + '_' + metric_mode + '_' + dr + '_' + aw + '.txt')
             if str(combine[0]) + ',' in exist:
                 exit(0)
     final_pred_pred = None
@@ -871,9 +887,9 @@ def execute_single(name, mode, shrink, label_and_combine, metric_mode, avg_windo
     validate_html = ''
     for i in range(cv_len):
         if ':' in label_dim:
-            data,y_pred_previous,show = loadProbRaw(combine[-1], combine, None, name.split('_')[0] + '_raw_txt', None, time_window, avg_window, mode=data_mode, enrich=None, reverse=False, sample_mode=metric_mode, debug=False, shrink=shrink, label_pos_array=[int(v) for v in label_dim.split(':')], output_chunk_length=output_chunk_length, pred_len=pred_len, smoothing_mode=smoothing_mode, ema_alpha=ema_alpha)
+            data,y_pred_previous,show = loadProbRaw(combine[-1], combine, None, name.split('_')[0] + ('_raw_txt' if last_date is None else '_raw_history/' + last_date), None, time_window, avg_window, mode=data_mode, enrich=None, reverse=False, sample_mode=metric_mode, debug=False, shrink=shrink, label_pos_array=[int(v) for v in label_dim.split(':')], output_chunk_length=output_chunk_length, pred_len=pred_len, smoothing_mode=smoothing_mode, ema_alpha=ema_alpha)
         else:
-            data,y_pred_previous,show = loadProbRaw(combine[-1], combine, None, name.split('_')[0] + '_raw_txt', int(label_dim), time_window, avg_window, mode=data_mode, enrich=None, reverse=False, sample_mode=metric_mode, debug=False, shrink=shrink, output_chunk_length=output_chunk_length, pred_len=pred_len, smoothing_mode=smoothing_mode, ema_alpha=ema_alpha)
+            data,y_pred_previous,show = loadProbRaw(combine[-1], combine, None, name.split('_')[0] + ('_raw_txt' if last_date is None else '_raw_history/' + last_date), int(label_dim), time_window, avg_window, mode=data_mode, enrich=None, reverse=False, sample_mode=metric_mode, debug=False, shrink=shrink, output_chunk_length=output_chunk_length, pred_len=pred_len, smoothing_mode=smoothing_mode, ema_alpha=ema_alpha)
         if data_mode == 'PURE_TIME_SERIES':
             pass#pred_pred, pred_y, target_pred = dart_test(data, model_use=DART_MODEL_N_LINEAR,input_chunk_length=time_window,output_chunk_length=output_chunk_length)
         else:
@@ -889,7 +905,7 @@ def execute_single(name, mode, shrink, label_and_combine, metric_mode, avg_windo
             final_pred_pred += pred_result['pred']
             final_target_pred += target_result['pred']
         if cv_len > 1:
-            print('第几轮啦:', i)
+            print('round:', i)
     final_pred_pred /= cv_len
     final_target_pred /= cv_len
     print('\n\n')
@@ -934,7 +950,7 @@ def execute_single(name, mode, shrink, label_and_combine, metric_mode, avg_windo
             )
         }
         record.update(result)
-        fn = name + '/metric/detail_' + str(label_dim)
+        fn = name + '/%s/detail_' % ('metric' if target_date is None else target_date) + str(label_dim)
         if os.path.exists(fn + '.pkl'):
             exist = load_obj(fn)
             if 'qxc' in name and len(exist) >= 20 and int(aw) >= 15:
@@ -959,7 +975,7 @@ def execute_single(name, mode, shrink, label_and_combine, metric_mode, avg_windo
             persist_obj(exist, fn)
         else:
             persist_obj([record], fn)
-        fe = open(name + '/metric/find_best_' + str(label_dim) + '_' + metric_mode + '_' + dr + '_' + aw + '.txt', 'a')
+        fe = open(name + '/%s/find_best_' % ('metric' if target_date is None else target_date) + str(label_dim) + '_' + metric_mode + '_' + dr + '_' + aw + '.txt', 'a')
         fe.write(str(result) + '\n')
         fe.close()
 
@@ -990,7 +1006,10 @@ if __name__ == '__main__':
         ema_alpha = float(
             args[9]
         )
-    execute_single(name, mode, shrink, label_and_combine, metric_mode, avg_window, drop_rate, pred_len, smoothing_mode=smoothing_mode, ema_alpha=ema_alpha)
+    target_date = None
+    if len(args) > 10:
+        target_date = args[10]
+    execute_single(name, mode, shrink, label_and_combine, metric_mode, avg_window, drop_rate, pred_len, smoothing_mode=smoothing_mode, ema_alpha=ema_alpha, target_date=target_date)
     #execute_secondary_global('qxc', ['20251228', '20251230'], None, ['20260630'], None, 0.1, int(label_and_combine[0]), 'CAT', 0.01)
     #execute_secondary_current(name, '20260501', 'CAT', 0.03)
 

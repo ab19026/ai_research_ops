@@ -262,7 +262,7 @@ def refine_rst_gap_stat_val(rst, val):
 grow_big = 0.0025
 grow_small = 0.00025
 
-# only for SINGLE and PAIR
+# only for SINGLE and PAIR and ENDPOINT
 def seq_merge(seq, seq_gap, label, flag):
     current_consecutive = False
     non_current_consecutive = False
@@ -392,7 +392,7 @@ def train(seq, seq_gap, gap_stat, label, data_len, avg_window, dt, debug=True):
                 right_current_consecutive = True
         for i in range(pos + 1, len(seq)):
             if abs(seq_gap[i] - seq_gap[pos]) < 0.0000001:
-                 right_current_consecutive = True
+                right_current_consecutive = True
             elif fmt(seq_gap[i] + eps) != fmt(seq_gap[pos] + eps) and (not no_gap):
                 for ii in range(i + 1, len(seq)):
                     if abs(seq_gap[ii] - seq_gap[i]) < 0.0000001:
@@ -425,6 +425,7 @@ def train(seq, seq_gap, gap_stat, label, data_len, avg_window, dt, debug=True):
     }
     if left_gap_val is not None or right_gap_val is not None:
         if (edge_gt(left_gap_val) or edge_lt(left_gap_val)) and (edge_gt(right_gap_val) or edge_lt(right_gap_val)):
+            # if (edge_gt(left_gap_val) and edge_gt(right_gap_val) and edge_more(left_gap_val) >= edge_more(right_gap_val)) or (edge_lt(left_gap_val) and edge_lt(right_gap_val) and edge_more(left_gap_val) <= edge_more(right_gap_val)):
             if edge_gt(left_gap_val) and edge_more(left_gap_val) >= edge_more(right_gap_val) or edge_lt(left_gap_val) and edge_more(left_gap_val) <= edge_more(right_gap_val):
                 rst['current_consecutive'] = left_current_consecutive
                 rst['non_current_consecutive'] = left_non_current_consecutive
